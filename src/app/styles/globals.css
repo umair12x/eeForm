@@ -1,0 +1,217 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b0f14;
+
+  --card-bg: #fffdf6;
+  --border-soft: #f1e6b8;
+  --accent-primary: #d3a410;
+  --accent-secondary: #0e5acd;
+}
+
+/* Theme tokens */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* System dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b0f14;
+    --foreground: #e6e9ee;
+
+    --card-bg: #121821;
+    --border-soft: #1f2a37;
+    --accent-primary: #f5c542;
+    --accent-secondary: #5aa2ff;
+  }
+}
+
+/* Body */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Primary gradient text */
+.text-primary-gradient {
+  @apply relative font-semibold tracking-wide text-transparent 
+  bg-clip-text transition-all duration-700 
+  bg-gradient-to-r from-[#d3a410] via-[#b7870f] to-[#f5d04c]
+  dark:from-[#f5c542] dark:via-[#ffd966] dark:to-[#caa332]
+  drop-shadow-[0_2px_10px_rgba(211,165,16,0.35)]
+  dark:drop-shadow-[0_2px_14px_rgba(245,197,66,0.45)];
+  background-size: 220% auto;
+  animation: shine-move 4s ease-in-out infinite;
+}
+
+/* Secondary gradient text */
+.text-secondary-gradient {
+  @apply relative font-semibold tracking-wide text-transparent 
+  bg-clip-text transition-all duration-700 
+  bg-gradient-to-r from-[#0e5acd] via-[#071f41] to-[#7999c9]
+  dark:from-[#5aa2ff] dark:via-[#1b355a] dark:to-[#8cbcff]
+  drop-shadow-[0_2px_10px_rgba(14,90,205,0.35)]
+  dark:drop-shadow-[0_2px_14px_rgba(90,162,255,0.45)];
+  background-size: 250% auto;
+  animation: shine-move 4s ease-in-out infinite;
+}
+
+/* Gradient animation */
+@keyframes shine-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 50% 75%; }
+}
+
+/* Navbar */
+.nav-style {
+  @apply bg-yellow-50 text-gray-800 text-center p-4
+  dark:bg-[#0b0f14] dark:text-gray-200;
+}
+
+/* Footer */
+.footer-style {
+  @apply bg-yellow-100 text-gray-800 text-center p-4
+  dark:bg-[#0b0f14] dark:text-gray-300;
+}
+
+/* Input fields */
+.input {
+  @apply w-full px-4 py-2 rounded-xl 
+  bg-yellow-50 text-gray-800 border border-yellow-200 
+  outline-none focus:ring-2 focus:ring-yellow-400
+  dark:bg-[#121821] dark:text-gray-200 dark:border-[#1f2a37]
+  dark:focus:ring-[#f5c542];
+}
+
+/* Primary button */
+.btn-primary {
+  @apply px-5 py-2 rounded-xl shadow transition
+  bg-yellow-500 text-white hover:bg-yellow-600
+  dark:bg-[#f5c542] dark:text-[#0b0f14]
+  dark:hover:bg-[#ffd966]
+  dark:shadow-[0_8px_25px_rgba(245,197,66,0.35)];
+}
+
+/* Secondary button */
+.btn-gray {
+  @apply px-5 py-2 rounded-xl shadow transition border
+  bg-yellow-100 text-gray-800 border-yellow-200 hover:bg-yellow-200
+  dark:bg-[#1f2937] dark:text-gray-200 dark:border-[#374151]
+  dark:hover:bg-[#374151];
+}
+
+/* Fade animation */
+.animate-fade {
+  animation: fade-in 0.4s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Fixed: Removed nested structure and properly defined new classes */
+.btn-primary-enhanced {
+  @apply px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg 
+         hover:from-blue-700 hover:to-blue-800 transition-all duration-300 
+         shadow-lg hover:shadow-xl transform hover:-translate-y-1;
+}
+
+.btn-secondary-enhanced {
+  @apply px-6 py-3 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-semibold rounded-lg 
+         border border-gray-300 dark:border-gray-700 hover:border-blue-500 
+         transition-all duration-300 shadow hover:shadow-md;
+}
+
+.card {
+  @apply bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 
+         shadow-sm hover:shadow-xl transition-all duration-300;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 
+         rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+         dark:focus:ring-blue-400 dark:focus:border-blue-400 
+         transition-all duration-300;
+}
+
+.section-padding {
+  @apply py-12 md:py-20;
+}
+
+/* Custom Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500 dark:bg-gray-600;
+}
+
+
+/* Additional CSS for Guide Page */
+.sticky-nav {
+  position: sticky;
+  top: 4rem;
+  z-index: 40;
+  backdrop-filter: blur(8px);
+}
+
+.sticky-sidebar {
+  position: sticky;
+  top: 7rem;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .process-step {
+    flex-direction: column;
+  }
+  
+  .process-step-indicator {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none;
+  }
+  
+  .print-full {
+    width: 100% !important;
+  }
+}

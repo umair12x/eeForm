@@ -1,0 +1,251 @@
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/db";
+import Fee from "@/models/Fee";
+import Degree from "@/models/Degree";
+import { v2 as cloudinary } from "cloudinary";
+
+export async function GET() {
+  await connectDB();
+  
+  try {
+    const degrees = await Degree.find({ isActive: true })
+      .select("_id name totalSemesters");
+
+    const degreesData = degrees.map((degree) => ({
+      id: degree._id.toString(),
+      name: degree.name,
+      totalSemesters: degree.totalSemesters,
+    }));
+
+    return NextResponse.json(degreesData);
+  } catch (error) {
+    console.error("Error fetching degrees:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch degrees data" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req) {
+  await connectDB();
+  
+  try {
+    console.log("=== FEE VERIFICATION REQUEST START ===");
+    const formData = await req.formData();
+    
+    // Extract all fields with new additions
+    const registrationNumber = formData.get("registrationNumber")?.toString() || "";
+    const studentType = formData.get("studentType")?.toString() || "";
+    const studentName = formData.get("studentName")?.toString() || "";
+    const fatherName = formData.get("fatherName")?.toString() || "";
+    const cnic = formData.get("cnic")?.toString() || "";
+    const degreeProgram = formData.get("degreeProgram")?.toString() || "";
+    const degreeId = formData.get("degreeId")?.toString() || "";
+    const campus = formData.get("campus")?.toString() || "";
+    const degreeMode = formData.get("degreeMode")?.toString() || "";
+    const semesterSeason = formData.get("semesterSeason")?.toString() || "";
+    const semesterYear = formData.get("semesterYear")?.toString() || "";
+    const semesterPaid = formData.get("semesterPaid")?.toString() || "";
+    const feeAmount = formData.get("feeAmount")?.toString() || "";
+    const feeType = formData.get("feeType")?.toString() || "regular";
+    const boarderStatus = formData.get("boarderStatus")?.toString() || "non-boarder";
+    const isSelf = formData.get("isSelf")?.toString() || "yes";
+    const bankName = formData.get("bankName")?.toString() || "";
+    const bankBranch = formData.get("bankBranch")?.toString() || "";
+    const voucherNumber = formData.get("voucherNumber")?.toString() || "";
+    const paymentDate = formData.get("paymentDate")?.toString() || "";
+    const contactNumber = formData.get("contactNumber")?.toString() || "";
+    const remarks = formData.get("remarks")?.toString() || "";
+
+    // Prepare data object
+    const data = {
+      registrationNumber,
+      studentType,
+      studentName,
+      fatherName,
+      cnic,
+      degreeProgram,
+      degreeId,
+      campus,
+      degreeMode,
+      semesterSeason,
+      semesterYear,
+      semesterPaid: parseInt(semesterPaid) || 0,
+      feeAmount: parseFloat(feeAmount) || 0,
+      feeType,
+      boarderStatus,
+      isSelf,
+      bankName,
+      bankBranch,
+      voucherNumber,
+      paymentDate: paymentDate ? new Date(paymentDate) : null,
+      contactNumber,
+      remarks,
+    };
+    
+    console.log("Data to be saved:", data);
+
+    // Validate required fields
+    const requiredFields = [
+      "registrationNumber",
+      "studentType",
+      "studentName",
+      "cnic",
+      "degreeProgram",
+      "campus",
+      "degreeMode",
+      "semesterSeason",
+      "semesterYear",
+      "semesterPaid",
+      "feeAmount",
+      "isSelf",
+      "bankName",
+      "bankBranch",
+      "voucherNumber",
+      "paymentDate",
+    ];
+
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        return NextResponse.json(
+          { error: `${field} is required` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate bank name
+    const validBanks = ["ABL", "HBL", "MCB"];
+    if (!validBanks.includes(data.bankName)) {
+      return NextResponse.json(
+        { error: "Invalid bank selected. Please select from ABL, HBL, or MCB." },
+        { status: 400 }
+      );
+    }
+
+    // Check for existing pending requests
+    const existingRequest = await Fee.findOne({
+      registrationNumber: data.registrationNumber,
+      status: { $in: ["pending", "processing"] },
+    });
+
+    if (existingRequest) {
+      return NextResponse.json(
+        {
+          error: "You already have a pending fee verification request",
+          requestId: existingRequest.requestId,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Process voucher image - upload to Cloudinary
+    const file = formData.get("voucherImage");
+    let voucherImageUrl = "";
+    let voucherPublicId = "";
+
+    if (file && file.name) {
+      try {
+        const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+        if (!validTypes.includes(file.type)) {
+          return NextResponse.json(
+            { error: "Invalid file type. Please upload JPEG, PNG, or WebP image." },
+            { status: 400 }
+          );
+        }
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Configure Cloudinary
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+
+        const uploadPromise = new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "fee-vouchers",
+              public_id: `fee_${registrationNumber}_${Date.now()}`,
+              resource_type: "image",
+              format: "jpg",
+              transformation: [
+                { width: 1000, crop: "limit" },
+                { quality: "auto:good" }
+              ]
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+
+          uploadStream.end(buffer);
+        });
+
+        const result = await uploadPromise;
+        voucherImageUrl = result.secure_url;
+        voucherPublicId = result.public_id;
+
+        console.log("✓ Uploaded voucher to Cloudinary:", voucherImageUrl);
+
+      } catch (uploadError) {
+        console.error("✗ Cloudinary upload failed:", uploadError);
+        return NextResponse.json(
+          { error: "Failed to upload voucher image" },
+          { status: 500 }
+        );
+      }
+    } else {
+      return NextResponse.json(
+        { error: "Voucher image is required" },
+        { status: 400 }
+      );
+    }
+
+    // Generate unique request ID
+    const requestId = `UAF-FV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+    // Create verification record
+    const verification = new Fee({
+      ...data,
+      voucherImageUrl,
+      voucherPublicId: voucherPublicId || `local_${Date.now()}`,
+      requestId,
+      status: "pending",
+      submittedAt: new Date(),
+    });
+
+    await verification.save();
+    
+    console.log("✓ Form saved to database with ID:", verification._id);
+    console.log("=== FEE VERIFICATION REQUEST COMPLETE ===");
+
+    return NextResponse.json({
+      success: true,
+      message: "Fee verification request submitted successfully",
+      requestId,
+      status: verification.status,
+      studentType: verification.studentType,
+      data: {
+        id: verification._id.toString(),
+        studentName: verification.studentName,
+        registrationNumber: verification.registrationNumber,
+        semesterPaid: verification.semesterPaid,
+        feeAmount: verification.feeAmount,
+      },
+    });
+    
+  } catch (error) {
+    console.error("✗ Server error:", error);
+    return NextResponse.json(
+      { 
+        error: error.message || "Internal server error",
+      },
+      { status: 500 }
+    );
+  }
+}
