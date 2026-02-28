@@ -1,19 +1,52 @@
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 import connectDB from "@/lib/db";
 import UgForm from "@/models/UgForm";
+import User from "@/models/User";
 // IMPORT THE MODELS TO REGISTER THEM
 import Department from "@/models/Department";
 import Degree from "@/models/Degree";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 // GET - Fetch forms for tutor with proper status mapping
 export async function GET(req) {
   await connectDB();
   try {
+    // authenticate the tutor using JWT stored in cookie
+    const token = req.cookies.get("token")?.value;
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+        return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+      }
+      throw err;
+    }
+
+    const user = await User.findById(decoded.id).select("email role name");
+    if (!user) {
+      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+    }
+    if (user.role !== "tutor") {
+      return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     
     const status = searchParams.get("status");
 
-    let query = {};
+    let query = {
+      tutorEmail: user.email // limit to tutor's own forms
+    };
     
     // Map status filters to actual database status
     if (status === "pending") {
@@ -32,9 +65,10 @@ export async function GET(req) {
       .sort({ submittedAt: -1 });
 
     // Calculate statistics
-    const pending = await UgForm.countDocuments({ status: "submitted" });
-    const signed = await UgForm.countDocuments({ status: "tutor_approved" });
-    const rejected = await UgForm.countDocuments({ status: "tutor_rejected" });
+    // include tutor constraint in stats counts as well
+    const pending = await UgForm.countDocuments({ status: "submitted", tutorEmail: user.email });
+    const signed = await UgForm.countDocuments({ status: "tutor_approved", tutorEmail: user.email });
+    const rejected = await UgForm.countDocuments({ status: "tutor_rejected", tutorEmail: user.email });
     const total = pending + signed + rejected;
 
     const formattedForms = forms.map((form) => ({
@@ -94,6 +128,33 @@ export async function GET(req) {
 export async function PUT(req) {
   await connectDB();
   try {
+    // authenticate tutor
+    const token = req.cookies.get("token")?.value;
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+        return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+      }
+      throw err;
+    }
+
+    const user = await User.findById(decoded.id).select("email role name");
+    if (!user) {
+      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+    }
+    if (user.role !== "tutor") {
+      return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+    }
+
     const body = await req.json();
     const { formId, action, tutorSignature, rejectionReason } = body;
 
@@ -117,6 +178,21 @@ export async function PUT(req) {
         { status: 404 }
       );
     }
+
+    // ensure tutor can only act on their own forms
+    if (form.tutorEmail !== user.email) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You are not authorized to modify this form",
+        },
+        { status: 403 }
+      );
+    }
+
+    // optionally keep tutor info up to date
+    form.tutorName = user.name;
+    form.tutorEmail = user.email;
 
     // Validate form state
     if (form.status !== "submitted") {
