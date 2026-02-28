@@ -13,6 +13,25 @@ export async function POST(req) {
     console.log("=== FEE VERIFICATION REQUEST START ===");
     const formData = await req.formData();
     
+        // Get authenticated user registration number for security check
+        const token = req.cookies.get("token")?.value;
+        let currentUserRegNumber = "";
+    
+        if (token) {
+          try {
+            const jwt = require("jsonwebtoken");
+            const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+            const decoded = jwt.verify(token, JWT_SECRET);
+            const User = require("@/models/User").default;
+            const user = await User.findById(decoded.id).select("registrationNumber");
+            if (user) {
+              currentUserRegNumber = user.registrationNumber;
+            }
+          } catch (err) {
+            console.log("Could not decode token, proceeding without auth check");
+          }
+        }
+    
     // Extract all fields with new additions
     const registrationNumber = formData.get("registrationNumber")?.toString() || "";
     const studentType = formData.get("studentType")?.toString() || "";
@@ -187,6 +206,16 @@ export async function POST(req) {
 
     // Generate unique request ID
     const requestId = `UAF-FV-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+    // Only allow if registrationNumber matches authenticated user (if auth data available)
+    if (currentUserRegNumber && registrationNumber !== currentUserRegNumber) {
+      return NextResponse.json(
+        {
+          error: "Registration number does not match authenticated user",
+        },
+        { status: 403 }
+      );
+    }
 
     // Create verification record
     const verification = new Fee({
