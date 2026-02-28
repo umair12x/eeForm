@@ -1,12 +1,7 @@
-'use client';
-import Navbar  from "../../../components/HandlerNavbar";
-
-
-export default function RootLayout({ children }) {
+export default function tutorLayout({ children }) {
  
   return (
     <>
-      <Navbar />
       {children}
     </>
   );
