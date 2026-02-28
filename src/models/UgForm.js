@@ -93,6 +93,7 @@ const UgFormSchema = new mongoose.Schema(
     formNumber: {
       type: String,
       unique: true,
+      sparse: true,
     },
     formType: {
       type: String,
@@ -208,7 +209,7 @@ const UgFormSchema = new mongoose.Schema(
     feePaidUpto: {
       type: String,
     },
-    feePaymentDate:{
+    feePaymentDate: {
       type: Date,
     },
     feeAmount: {
@@ -234,13 +235,23 @@ const UgFormSchema = new mongoose.Schema(
     studentSignedAt: {
       type: Date,
     },
+    tutorName: {
+      type: String,
+      required: true, // Added required: true
+      trim: true,
+    },
+    tutorEmail: {
+      type: String,
+      required: true, // Added required: true
+      trim: true,
+      lowercase: true,
+    },
     tutorSignature: {
       type: String,
     },
     tutorSignedAt: {
       type: Date,
     },
-   
 
     // Form Status
     status: {
@@ -248,7 +259,7 @@ const UgFormSchema = new mongoose.Schema(
       enum: [
         "draft",
         "submitted",
-        "pending_tutor",
+        "tutor_pending",
         "tutor_approved",
         "tutor_rejected",
         "manager_pending",
@@ -300,7 +311,6 @@ const UgFormSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
 // Indexes for efficient querying
 UgFormSchema.index({ formNumber: 1 });
 UgFormSchema.index({ registeredNo: 1 });
@@ -309,6 +319,7 @@ UgFormSchema.index({ department: 1, degree: 1, semester: 1 });
 UgFormSchema.index({ submittedAt: -1 });
 
 // Check if model exists before creating
-const UgForm = mongoose.models.UgForm || mongoose.model("UgForm", UgFormSchema);
+const UgForm =
+  mongoose.models.UgForm || mongoose.model("UgForm", UgFormSchema);
 
 export default UgForm;
