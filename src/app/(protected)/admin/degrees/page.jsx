@@ -1,12 +1,31 @@
-"use client";
-import { useEffect, useState } from "react";
+// app/admin/degrees/page.jsx - Enhanced Degrees Management
+"use client"
+
+import { useEffect, useState } from "react"
+import { 
+  GraduationCap, 
+  Plus, 
+  Pencil, 
+  Trash2, 
+  Search,
+  Filter,
+  MoreHorizontal,
+  Building2,
+  Layers,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  X
+} from "lucide-react"
 
 export default function DegreesPage() {
-  const [degrees, setDegrees] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [degrees, setDegrees] = useState([])
+  const [departments, setDepartments] = useState([])
+  const [editingId, setEditingId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterDept, setFilterDept] = useState("")
+  const [showAddModal, setShowAddModal] = useState(false)
 
   const [form, setForm] = useState({
     name: "",
@@ -15,140 +34,89 @@ export default function DegreesPage() {
     totalSemesters: 8,
     totalSessions: 1,
     totalSections: 1,
-  });
+    description: "",
+    active: true
+  })
 
   useEffect(() => {
-    fetchDegrees();
-    fetchDepartments();
-  }, []);
+    fetchData()
+  }, [])
 
-  // Fetch all degrees
-  async function fetchDegrees() {
+  async function fetchData() {
     try {
-      setLoading(true);
-      const res = await fetch("/api/admin/degree");
-      if (!res.ok) throw new Error("Failed to fetch degrees");
-      const data = await res.json();
-      setDegrees(data);
-      setError("");
+      const [degreesRes, deptsRes] = await Promise.all([
+        fetch("/api/admin/degree"),
+        fetch("/api/admin/department")
+      ])
+      
+      if (!degreesRes.ok || !deptsRes.ok) throw new Error("Failed to fetch data")
+      
+      const degreesData = await degreesRes.json()
+      const deptsData = await deptsRes.json()
+      
+      setDegrees(degreesData)
+      setDepartments(deptsData)
     } catch (err) {
-      console.error(err);
-      setError("Failed to load degrees");
+      console.error(err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
-  // Fetch all departments
-  async function fetchDepartments() {
+  async function handleSubmit(e) {
+    e.preventDefault()
+    
     try {
-      const res = await fetch("/api/admin/department");
-      if (!res.ok) throw new Error("Failed to fetch departments");
-      const data = await res.json();
-      setDepartments(data);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  async function addDegree() {
-    if (!form.name.trim()) {
-      alert("Degree name is required");
-      return;
-    }
-    if (!form.department) {
-      alert("Department is required");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const res = await fetch("/api/admin/degree", {
-        method: "POST",
+      const url = editingId ? `/api/admin/degree/${editingId}` : "/api/admin/degree"
+      const method = editingId ? "PUT" : "POST"
+      
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+        body: JSON.stringify(form)
+      })
       
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.message || "Failed to add degree");
-        return;
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+      
+      if (editingId) {
+        setDegrees(degrees.map(d => d.id === editingId ? data.degree : d))
+      } else {
+        setDegrees([...degrees, data.degree])
       }
-
-      setDegrees([...degrees, data.degree]);
-      resetForm();
-      alert("Degree added successfully");
+      
+      resetForm()
+      setShowAddModal(false)
     } catch (err) {
-      console.error(err);
-      alert("An error occurred");
-    } finally {
-      setLoading(false);
+      alert(err.message)
     }
   }
 
-  async function saveEdit(id) {
-    if (!form.name.trim() || !form.department) {
-      alert("Name and department are required");
-      return;
-    }
-
+  async function handleDelete(id) {
+    if (!confirm("Are you sure you want to delete this degree program?")) return
+    
     try {
-      setLoading(true);
-      const res = await fetch(`/api/admin/degree/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.message || "Failed to update degree");
-        return;
-      }
-
-      setDegrees(degrees.map((d) => (d.id === id ? data.degree : d)));
-      resetForm();
-      setEditingId(null);
-      alert("Degree updated successfully");
+      const res = await fetch(`/api/admin/degree/${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete")
+      setDegrees(degrees.filter(d => d.id !== id))
     } catch (err) {
-      console.error(err);
-      alert("An error occurred");
-    } finally {
-      setLoading(false);
+      alert(err.message)
     }
   }
 
-  async function deleteDegree(id) {
-    if (!confirm("Are you sure you want to delete this degree?")) return;
-
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/admin/degree/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        alert("Failed to delete degree");
-        return;
-      }
-      
-      setDegrees(degrees.filter((d) => d.id !== id));
-      alert("Degree deleted successfully");
-    } catch (err) {
-      console.error(err);
-      alert("An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function startEdit(deg) {
-    setEditingId(deg.id);
+  function startEdit(degree) {
+    setEditingId(degree.id)
     setForm({
-      name: deg.name,
-      shortName: deg.shortName || "",
-      department: deg.department,
-      totalSemesters: deg.totalSemesters || 8,
-      totalSessions: deg.totalSessions || 1,
-      totalSections: deg.totalSections || 1,
-    });
+      name: degree.name,
+      shortName: degree.shortName || "",
+      department: degree.department,
+      totalSemesters: degree.totalSemesters,
+      totalSessions: degree.totalSessions,
+      totalSections: degree.totalSections,
+      description: degree.description || "",
+      active: degree.active
+    })
+    setShowAddModal(true)
   }
 
   function resetForm() {
@@ -159,197 +127,303 @@ export default function DegreesPage() {
       totalSemesters: 8,
       totalSessions: 1,
       totalSections: 1,
-    });
-    setEditingId(null);
+      description: "",
+      active: true
+    })
+    setEditingId(null)
   }
 
-  function cancelEdit() {
-    resetForm();
+  const filteredDegrees = degrees.filter(d => {
+    const matchesSearch = d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         d.shortName?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesDept = filterDept ? d.department === filterDept : true
+    return matchesSearch && matchesDept
+  })
+
+  const stats = {
+    total: degrees.length,
+    active: degrees.filter(d => d.active).length,
+    byDept: departments.map(d => ({
+      name: d.name,
+      count: degrees.filter(deg => deg.department === d.id).length
+    }))
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    )
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Degrees & Programs</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Degree Programs</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            Manage academic degree programs and their configurations
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            resetForm()
+            setShowAddModal(true)
+          }}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-blue-200 dark:shadow-blue-900/30 hover:shadow-xl"
+        >
+          <Plus className="w-5 h-5" />
+          Add Degree
+        </button>
+      </div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+              <GraduationCap className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Total Programs</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.active}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Active Programs</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
+              <Building2 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{departments.length}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Departments</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search degrees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <select
+          value={filterDept}
+          onChange={(e) => setFilterDept(e.target.value)}
+          className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Departments</option>
+          {departments.map(d => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Degrees Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {filteredDegrees.map((degree) => (
+          <div 
+            key={degree.id} 
+            className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 hover:shadow-lg transition-all duration-300"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-xl ${degree.active ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                  <GraduationCap className={`w-6 h-6 ${degree.active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">{degree.name}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{degree.shortName}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => startEdit(degree)}
+                  className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(degree.id)}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{degree.totalSemesters}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Semesters</p>
+              </div>
+              <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{degree.totalSessions}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Sessions</p>
+              </div>
+              <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{degree.totalSections}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Sections</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {departments.find(d => d.id === degree.department)?.name || "Unknown Dept"}
+              </span>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                degree.active 
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              }`}>
+                {degree.active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                {editingId ? "Edit Degree" : "Add New Degree"}
+              </h2>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Degree Name *</label>
+                  <input
+                    value={form.name}
+                    onChange={(e) => setForm({...form, name: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Bachelor of Science"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Short Name</label>
+                  <input
+                    value={form.shortName}
+                    onChange={(e) => setForm({...form, shortName: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., BS"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Department *</label>
+                <select
+                  value={form.department}
+                  onChange={(e) => setForm({...form, department: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Semesters</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={form.totalSemesters}
+                    onChange={(e) => setForm({...form, totalSemesters: parseInt(e.target.value)})}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Sessions</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.totalSessions}
+                    onChange={(e) => setForm({...form, totalSessions: parseInt(e.target.value)})}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Sections</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.totalSections}
+                    onChange={(e) => setForm({...form, totalSections: parseInt(e.target.value)})}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-4">
+                <input
+                  type="checkbox"
+                  id="active"
+                  checked={form.active}
+                  onChange={(e) => setForm({...form, active: e.target.checked})}
+                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="active" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Active Program
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold transition-colors"
+                >
+                  {editingId ? "Update Degree" : "Create Degree"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-6 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
-
-      {/* Add / Edit Form */}
-      <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-        <h2 className="text-lg font-semibold">
-          {editingId ? "Edit Degree" : "Add New Degree"}
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">Name *</label>
-            <input
-              className="border p-2 w-full rounded"
-              placeholder="Degree Name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Short Name</label>
-            <input
-              className="border p-2 w-full rounded"
-              placeholder="Short Name"
-              value={form.shortName}
-              onChange={(e) => setForm({ ...form, shortName: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Department *</label>
-            <select
-              className="border p-2 w-full rounded"
-              value={form.department}
-              onChange={(e) => setForm({ ...form, department: e.target.value })}
-            >
-              <option value="">Select Department</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Semesters</label>
-            <input
-              type="number"
-              min="1"
-              className="border p-2 w-full rounded"
-              value={form.totalSemesters}
-              onChange={(e) =>
-                setForm({ ...form, totalSemesters: Number(e.target.value) })
-              }
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Sessions</label>
-            <input
-              type="number"
-              min="1"
-              className="border p-2 w-full rounded"
-              value={form.totalSessions}
-              onChange={(e) =>
-                setForm({ ...form, totalSessions: Number(e.target.value) })
-              }
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Sections</label>
-            <input
-              type="number"
-              min="1"
-              className="border p-2 w-full rounded"
-              value={form.totalSections}
-              onChange={(e) =>
-                setForm({ ...form, totalSections: Number(e.target.value) })
-              }
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={editingId ? () => saveEdit(editingId) : addDegree}
-            disabled={loading}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            {loading ? "Processing..." : editingId ? "Update Degree" : "Add Degree"}
-          </button>
-          
-          {editingId && (
-            <button
-              onClick={cancelEdit}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border">
-          <thead className="bg-gray-800 text-white">
-            <tr>
-              <th className="border p-2 text-left">Name</th>
-              <th className="border p-2 text-left">Short</th>
-              <th className="border p-2 text-left">Department</th>
-              <th className="border p-2 text-left">Sem</th>
-              <th className="border p-2 text-left">Sess</th>
-              <th className="border p-2 text-left">Sec</th>
-              <th className="border p-2 text-left">Status</th>
-              <th className="border p-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && !degrees.length ? (
-              <tr>
-                <td colSpan="8" className="border p-4 text-center">
-                  Loading...
-                </td>
-              </tr>
-            ) : degrees.length === 0 ? (
-              <tr>
-                <td colSpan="8" className="border p-4 text-center text-gray-500">
-                  No degrees found
-                </td>
-              </tr>
-            ) : (
-              degrees.map((d) => (
-                <tr key={d.id} className="hover:bg-gray-50">
-                  <td className="border p-2">{d.name}</td>
-                  <td className="border p-2">{d.shortName || "-"}</td>
-                  <td className="border p-2">
-                    {d.departmentName || 
-                     departments.find((dept) => dept.id === d.department)?.name ||
-                     "Unknown"}
-                  </td>
-                  <td className="border p-2 text-center">{d.totalSemesters}</td>
-                  <td className="border p-2 text-center">{d.totalSessions}</td>
-                  <td className="border p-2 text-center">{d.totalSections}</td>
-                  <td className="border p-2">
-                    <span className={`px-2 py-1 rounded text-xs ${d.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {d.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="border p-2">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEdit(d)}
-                        className="text-blue-600 hover:text-blue-800"
-                        disabled={loading}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteDegree(d.id)}
-                        className="text-red-600 hover:text-red-800"
-                        disabled={loading}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
     </div>
-  );
+  )
 }
