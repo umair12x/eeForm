@@ -1,147 +1,205 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import ThemeToggle from "@/components/layout/ThemeToggle";
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import {
+  Shield,
+  Building2,
+  GraduationCap,
+  Mail,
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  CreditCard,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  ChevronLeft,
+  Fingerprint,
+  Phone,
+  MapPin,
+  BadgeCheck,
+  Info
+} from "lucide-react"
+import ThemeToggle from "@/components/layout/ThemeToggle"
 
 const ROLES = [
-  { 
-    value: "admin", 
-    label: "Admin", 
-    description: "Full system access - manages all users and settings",
-    icon: "👑",
-    color: "from-purple-600 to-indigo-600"
+  {
+    value: "admin",
+    label: "System Administrator",
+    description: "Full system access with user management and configuration control",
+    icon: Shield,
+    color: "violet",
+    gradient: "from-violet-600 to-purple-600",
+    border: "border-violet-200 dark:border-violet-800",
+    bg: "bg-violet-50 dark:bg-violet-900/20",
+    text: "text-violet-700 dark:text-violet-300",
   },
-  { 
-    value: "dg-office", 
-    label: "DG Office", 
-    description: "Director General Office - oversees academic operations",
-    icon: "🏛️",
-    color: "from-blue-600 to-cyan-600"
+  {
+    value: "dg-office",
+    label: "Director General Office",
+    description: "Oversees academic operations and institutional management",
+    icon: Building2,
+    color: "blue",
+    gradient: "from-blue-600 to-indigo-600",
+    border: "border-blue-200 dark:border-blue-800",
+    bg: "bg-blue-50 dark:bg-blue-900/20",
+    text: "text-blue-700 dark:text-blue-300",
   },
-  { 
-    value: "fee-office", 
-    label: "Fee Office", 
-    description: "Manages fee verification and financial records",
-    icon: "💰",
-    color: "from-emerald-600 to-teal-600"
+  {
+    value: "fee-office",
+    label: "Fee Management Office",
+    description: "Manages fee verification, financial records, and payment processing",
+    icon: GraduationCap,
+    color: "emerald",
+    gradient: "from-emerald-600 to-teal-600",
+    border: "border-emerald-200 dark:border-emerald-800",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    text: "text-emerald-700 dark:text-emerald-300",
   },
-];
+]
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
     cnic: "",
-    role: ""
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState([]);
-  const [checkingRoles, setCheckingRoles] = useState(true);
+    role: "",
+    phone: "",
+    department: "",
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [availableRoles, setAvailableRoles] = useState([])
+  const [checkingRoles, setCheckingRoles] = useState(true)
+  const [step, setStep] = useState(1) // Multi-step form
+  const [passwordStrength, setPasswordStrength] = useState(0)
 
   useEffect(() => {
-    setMounted(true);
-    checkAvailableRoles();
-  }, []);
+    setMounted(true)
+    checkAvailableRoles()
+  }, [])
 
   async function checkAvailableRoles() {
     try {
-      const availableRoles = [];
-      
+      const availableRoles = []
+
       for (const role of ROLES) {
-        const res = await fetch(`/api/auth/verify-role?role=${role.value}`);
-        const data = await res.json();
+        const res = await fetch(`/api/auth/verify-role?role=${role.value}`)
+        const data = await res.json()
         if (!data.exists) {
-          availableRoles.push(role);
+          availableRoles.push(role)
         }
       }
-      
-      setAvailableRoles(availableRoles);
-      
+
+      setAvailableRoles(availableRoles)
+
       if (availableRoles.length === 1) {
-        setFormData(prev => ({ ...prev, role: availableRoles[0].value }));
+        setFormData((prev) => ({ ...prev, role: availableRoles[0].value }))
       }
     } catch (err) {
-      console.error("Error checking roles:", err);
+      console.error("Error checking roles:", err)
     } finally {
-      setCheckingRoles(false);
+      setCheckingRoles(false)
     }
   }
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError("");
-  };
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
+    setError("")
+
+    if (name === "password") {
+      calculatePasswordStrength(value)
+    }
+  }
+
+  const calculatePasswordStrength = (password) => {
+    let strength = 0
+    if (password.length >= 8) strength++
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++
+    if (password.match(/\d/)) strength++
+    if (password.match(/[^a-zA-Z\d]/)) strength++
+    setPasswordStrength(strength)
+  }
 
   const formatCNIC = (value) => {
-    const numbers = value.replace(/\D/g, "");
+    const numbers = value.replace(/\D/g, "")
     if (numbers.length <= 5) {
-      return numbers;
+      return numbers
     } else if (numbers.length <= 12) {
-      return `${numbers.slice(0, 5)}-${numbers.slice(5)}`;
+      return `${numbers.slice(0, 5)}-${numbers.slice(5)}`
     } else {
-      return `${numbers.slice(0, 5)}-${numbers.slice(5, 12)}-${numbers.slice(12, 13)}`;
+      return `${numbers.slice(0, 5)}-${numbers.slice(5, 12)}-${numbers.slice(12, 13)}`
     }
-  };
+  }
 
   const handleCNICChange = (e) => {
-    const formatted = formatCNIC(e.target.value);
-    setFormData({ ...formData, cnic: formatted });
-  };
+    const formatted = formatCNIC(e.target.value)
+    setFormData({ ...formData, cnic: formatted })
+  }
 
-  const validateCNIC = (cnic) => {
-    const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
-    return cnicRegex.test(cnic);
-  };
+  const validateStep1 = () => {
+    if (!formData.name.trim()) {
+      setError("Full name is required")
+      return false
+    }
+    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setError("Please enter a valid email address")
+      return false
+    }
+    if (!formData.role) {
+      setError("Please select a role")
+      return false
+    }
+    return true
+  }
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const validateStep2 = () => {
+    if (!formData.cnic.match(/^\d{5}-\d{7}-\d{1}$/)) {
+      setError("Please enter a valid CNIC (format: 12345-1234567-1)")
+      return false
+    }
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long")
+      return false
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return false
+    }
+    return true
+  }
+
+  const handleNext = () => {
+    if (validateStep1()) {
+      setStep(2)
+      setError("")
+    }
+  }
+
+  const handleBack = () => {
+    setStep(1)
+    setError("")
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim()) {
-      setError("Name is required");
-      return;
-    }
+    e.preventDefault()
 
-    if (!validateEmail(formData.email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
+    if (!validateStep2()) return
 
-    if (!formData.role) {
-      setError("Please select a role");
-      return;
-    }
-
-    if (!validateCNIC(formData.cnic)) {
-      setError("Please enter a valid CNIC (format: 12345-1234567-1)");
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
+    setLoading(true)
+    setError("")
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -152,338 +210,539 @@ export default function RegisterPage() {
           email: formData.email,
           password: formData.password,
           cnic: formData.cnic,
-          role: formData.role
-        })
-      });
+          role: formData.role,
+          phone: formData.phone,
+          department: formData.department,
+        }),
+      })
 
-      const data = await res.json();
+      const data = await res.json()
 
       if (res.ok) {
-        alert(`✓ ${data.message}`);
-        router.push("/login");
+        setSuccess("Account created successfully! Redirecting to login...")
+        setTimeout(() => {
+          router.push("/login")
+        }, 2000)
       } else {
-        setError(data.message || "Registration failed");
+        setError(data.message || "Registration failed. Please try again.")
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError("Network error. Please check your connection and try again.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  if (!mounted) return null;
+  const selectedRole = ROLES.find((r) => r.value === formData.role)
+
+  const getPasswordStrengthColor = () => {
+    switch (passwordStrength) {
+      case 0:
+        return "bg-slate-200 dark:bg-slate-700"
+      case 1:
+        return "bg-rose-500"
+      case 2:
+        return "bg-amber-500"
+      case 3:
+        return "bg-blue-500"
+      case 4:
+        return "bg-emerald-500"
+      default:
+        return "bg-slate-200 dark:bg-slate-700"
+    }
+  }
+
+  const getPasswordStrengthLabel = () => {
+    switch (passwordStrength) {
+      case 0:
+        return "Enter password"
+      case 1:
+        return "Weak"
+      case 2:
+        return "Fair"
+      case 3:
+        return "Good"
+      case 4:
+        return "Strong"
+      default:
+        return ""
+    }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    )
+  }
 
   if (checkingRoles) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md text-center border border-gray-200 dark:border-gray-700">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-3 border-blue-600 border-t-transparent mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading system configuration...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8 w-full max-w-md text-center">
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-800 rounded-full" />
+            <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 font-medium">Verifying system configuration...</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Please wait</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (availableRoles.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md text-center border border-gray-200 dark:border-gray-700">
-          <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8 w-full max-w-md text-center">
+          <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-amber-600 dark:text-amber-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">All Positions Filled</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            All administrative positions have been filled. Please contact the existing admin if you need access.
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">All Positions Filled</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-8">
+            All administrative positions have been assigned. Please contact the system administrator if you need access.
           </p>
           <Link
-            href="/auth/login"
-            className="inline-block bg-gradient-to-r from-blue-900 to-blue-700 dark:from-blue-800 dark:to-blue-600 text-white font-medium px-8 py-3 rounded-xl hover:shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
+            href="/login"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl"
           >
+            <ArrowRight className="w-4 h-4" />
             Return to Login
           </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col lg:flex-row overflow-hidden">
       {/* Theme Toggle */}
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-block p-4 bg-gradient-to-br from-blue-900 to-blue-700 dark:from-blue-800 dark:to-blue-600 rounded-2xl shadow-2xl mb-6">
-            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Staff Registration</h1>
-          <p className="text-gray-600 dark:text-gray-400">Create administrative account</p>
-          <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 inline-block px-4 py-1 rounded-full">
-              🏛️ UAF Administrative Portal · Role-Based Access 🏛️
-            </p>
-          </div>
-        </div>
+      {/* Left Side - Branding */}
+      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
-        {/* Registration Card */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="h-1.5 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400"></div>
-          
-          <div className="p-6">
-            {/* Reference Number */}
-            <div className="flex justify-between items-start mb-6">
-              <div className="space-y-1">
-                <p className="text-xs font-mono text-gray-500 dark:text-gray-400">🔐 NEW REGISTRATION</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Form STAFF-001 · Administrative</p>
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
+          <div>
+            <Link href="/login" className="inline-flex items-center gap-2 text-blue-200 hover:text-white transition-colors mb-8">
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">Back to Login</span>
+            </Link>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
+                <Shield className="w-7 h-7 text-white" />
               </div>
-              <div className="text-right">
-                <p className="text-xs font-mono text-gray-500 dark:text-gray-400">REF: UAF/REG/{new Date().getFullYear()}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Verification Required</p>
+              <div>
+                <h2 className="text-lg font-bold">UAF Portal</h2>
+                <p className="text-blue-200 text-xs">Administrative Registration</p>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+            <h1 className="text-3xl font-bold mb-4 leading-tight">
+              Create Administrative Account
+            </h1>
+            <p className="text-blue-100 text-base mb-8 max-w-sm leading-relaxed">
+              Register for privileged access to the University of Agriculture Faisalabad's management systems.
+            </p>
+
+            {/* Progress Steps */}
+            <div className="space-y-4">
+              <div className={`flex items-center gap-4 ${step >= 1 ? "opacity-100" : "opacity-50"}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${step >= 1 ? "bg-white text-blue-900" : "bg-white/20 text-white"}`}>
+                  1
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Personal Information</p>
+                  <p className="text-xs text-blue-200">Name, email, and role selection</p>
+                </div>
+              </div>
+              <div className="w-0.5 h-8 bg-white/20 ml-5" />
+              <div className={`flex items-center gap-4 ${step >= 2 ? "opacity-100" : "opacity-50"}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${step >= 2 ? "bg-white text-blue-900" : "bg-white/20 text-white"}`}>
+                  2
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Security Setup</p>
+                  <p className="text-xs text-blue-200">CNIC verification and password</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-sm text-blue-200">
+            <div className="flex items-center gap-3">
+              <Phone className="w-4 h-4" />
+              <span>+92-41-9200161</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4" />
+              <span>Jail Road, Faisalabad</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div className="w-full max-w-lg space-y-6">
+          {/* Mobile Header */}
+          <div className="lg:hidden text-center mb-6">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg mb-4">
+              <Shield className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Staff Registration</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">UAF Administrative Portal</p>
+          </div>
+
+          {/* Main Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            {/* Security Header */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Fingerprint className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  Secure Registration
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-500">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                System Secure
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-8">
+              {/* Success Message */}
+              {success && (
+                <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">{success}</p>
                   </div>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Dr. Muhammad Ali"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="officer@uaf.edu.pk"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
-                  Select Role <span className="text-red-500">*</span>
-                </label>
-                <div className="space-y-3">
-                  {availableRoles.map((role) => (
-                    <label
-                      key={role.value}
-                      className={`flex items-start p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
-                        formData.role === role.value
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-700 bg-gray-50 dark:bg-gray-700/50'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value={role.value}
-                        checked={formData.role === role.value}
-                        onChange={handleChange}
-                        className="mt-1.5 mr-3"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">{role.icon}</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">{role.label}</span>
-                        </div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{role.description}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
-                  CNIC Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    name="cnic"
-                    value={formData.cnic}
-                    onChange={handleCNICChange}
-                    placeholder="12345-1234567-1"
-                    maxLength="15"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white font-mono"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Format: 12345-1234567-1</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Create a strong password"
-                    className="w-full pl-10 pr-20 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Minimum 8 characters</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Re-enter your password"
-                    className="w-full pl-10 pr-20 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 dark:text-white"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  >
-                    {showConfirmPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl">
-                  <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {error}
-                  </p>
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 bg-gradient-to-r from-blue-900 to-blue-700 dark:from-blue-800 dark:to-blue-600 hover:from-blue-800 hover:to-blue-600 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 text-sm flex items-center justify-center gap-2 shadow-lg"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Creating Account...</span>
-                  </>
+              {/* Error Message */}
+              {error && (
+                <div className="mb-6 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4 flex items-start gap-3 animate-in slide-in-from-top-2">
+                  <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
+                  </div>
+                  <button onClick={() => setError("")} className="text-rose-400 hover:text-rose-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {step === 1 ? (
+                  /* Step 1: Personal Info */
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        Full Name <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder="Dr. Muhammad Ahmad"
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          placeholder="name@uaf.edu.pk"
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-500">Use your official UAF email address</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        Contact Number
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          placeholder="+92-300-1234567"
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        Select Administrative Role <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="space-y-3">
+                        {availableRoles.map((role) => {
+                          const Icon = role.icon
+                          const isSelected = formData.role === role.value
+
+                          return (
+                            <label
+                              key={role.value}
+                              className={`relative flex items-start p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                                isSelected
+                                  ? `${role.border} ${role.bg} shadow-md`
+                                  : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50 dark:bg-slate-800/50"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="role"
+                                value={role.value}
+                                checked={isSelected}
+                                onChange={handleChange}
+                                className="sr-only"
+                              />
+                              <div
+                                className={`p-3 rounded-xl mr-4 ${isSelected ? `bg-gradient-to-br ${role.gradient} text-white` : "bg-slate-200 dark:bg-slate-700 text-slate-500"}`}
+                              >
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span
+                                    className={`font-semibold ${isSelected ? role.text : "text-slate-700 dark:text-slate-300"}`}
+                                  >
+                                    {role.label}
+                                  </span>
+                                  {isSelected && <BadgeCheck className={`w-5 h-5 ${role.text}`} />}
+                                </div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                  {role.description}
+                                </p>
+                              </div>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-200 dark:shadow-blue-900/30 flex items-center justify-center gap-2 group"
+                    >
+                      <span>Continue</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
                 ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                    <span>Create Account</span>
-                  </>
+                  /* Step 2: Security */
+                  <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Back to personal info
+                    </button>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        CNIC Number <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type="text"
+                          name="cnic"
+                          value={formData.cnic}
+                          onChange={handleCNICChange}
+                          placeholder="12345-1234567-1"
+                          maxLength="15"
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 font-mono tracking-wide"
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-500">
+                        Enter your 13-digit CNIC without spaces
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        Create Password <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          placeholder="Min 8 characters with mixed case, numbers & symbols"
+                          className="w-full pl-11 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+
+                      {/* Password Strength */}
+                      <div className="space-y-2">
+                        <div className="flex gap-1 h-1.5">
+                          {[1, 2, 3, 4].map((level) => (
+                            <div
+                              key={level}
+                              className={`flex-1 rounded-full transition-all duration-300 ${passwordStrength >= level ? getPasswordStrengthColor() : "bg-slate-200 dark:bg-slate-700"}`}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500 dark:text-slate-500">Password strength:</span>
+                          <span
+                            className={`font-medium ${
+                              passwordStrength === 4
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : passwordStrength >= 2
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : "text-slate-500"
+                            }`}
+                          >
+                            {getPasswordStrengthLabel()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        Confirm Password <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder="Re-enter your password"
+                          className="w-full pl-11 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                        <p className="text-xs text-rose-500 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Passwords do not match
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Selected Role Summary */}
+                    {selectedRole && (
+                      <div className={`p-4 rounded-xl ${selectedRole.bg} ${selectedRole.border} border`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg bg-gradient-to-br ${selectedRole.gradient} text-white`}>
+                            <selectedRole.icon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Selected Role</p>
+                            <p className={`font-semibold ${selectedRole.text}`}>{selectedRole.label}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={loading || formData.password !== formData.confirmPassword}
+                      className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-200 dark:shadow-blue-900/30 flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Creating Account...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-5 h-5" />
+                          <span>Create Secure Account</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 )}
-              </button>
-            </form>
+              </form>
 
-            {/* Footer */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Already have an account?{" "}
-                <Link href="/auth/login" className="text-blue-900 dark:text-blue-400 font-medium hover:underline">
-                  Sign In
-                </Link>
-              </p>
-            </div>
-
-            {/* Important Note */}
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-              <p className="text-xs text-blue-700 dark:text-blue-400">
-                <span className="font-bold">📋 Important Note:</span> This registration is exclusively for administrative roles. 
-                Each role can only be created once. Students and other staff accounts must be created by an administrator.
-              </p>
-            </div>
-
-            {/* Verification Notice */}
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                All registrations are subject to verification by the<br />
-                Directorate of IT, University of Agriculture, Faisalabad
-              </p>
+              {/* Info Box */}
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                    <p className="font-semibold">Important Notice</p>
+                    <p>
+                      Administrative accounts require verification by the Directorate of IT. You'll receive an activation
+                      email once approved.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            © {new Date().getFullYear()} University of Agriculture, Faisalabad. All rights reserved.
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Controller of Examinations • Fee Section • DG Office
-          </p>
+          {/* Footer */}
+          <div className="text-center space-y-2">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              >
+                Sign in here
+              </Link>
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              © {new Date().getFullYear()} University of Agriculture, Faisalabad
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
