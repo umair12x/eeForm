@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 
 function UgForm() {
@@ -8,11 +8,13 @@ function UgForm() {
   const [sessions, setSessions] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [schemeInfo, setSchemeInfo] = useState(null);
+  const [tutors, setTutors] = useState([]);
   const [loading, setLoading] = useState({
     departments: true,
     degrees: false,
     sessions: false,
     subjects: false,
+    tutors: false,
     submit: false,
   });
 
@@ -22,7 +24,7 @@ function UgForm() {
     session: "",
     semester: "",
     section: "",
-    admissionTo: '',
+    admissionTo: "",
     dateOfCommencement: new Date().toISOString().split("T")[0],
     dateOfFirstEnrollment: "",
     registeredNo: "",
@@ -34,6 +36,9 @@ function UgForm() {
     feePaidUpto: "",
     feePaymentDate: "",
     studentSignature: "",
+    tutorId: "",
+    tutorName: "",
+    tutorEmail: "",
     formDate: new Date().toISOString().split("T")[0],
   });
 
@@ -41,14 +46,191 @@ function UgForm() {
   const [extraSubjects, setExtraSubjects] = useState([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedFormId, setSubmittedFormId] = useState(null);
+  const [submittedFormNumber, setSubmittedFormNumber] = useState(null);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const MAX_CREDIT_HOURS = 24;
 
-  // Fetch departments on mount
+  // Helper function for ordinal suffixes
+  const getOrdinalSuffix = useCallback((num) => {
+    const j = num % 10;
+    const k = num % 100;
+    if (j === 1 && k !== 11) return "st";
+    if (j === 2 && k !== 12) return "nd";
+    if (j === 3 && k !== 13) return "rd";
+    return "th";
+  }, []);
+
+  // Parse credit hours from format like "3(2-1)" or "2(2-0)"
+  const parseCreditHours = useCallback((creditHoursString) => {
+    if (!creditHoursString) return { total: 0, theory: 0, practical: 0 };
+    const match = creditHoursString.match(/^(\d+)\((\d+)-(\d+)\)$/);
+    if (match) {
+      return {
+        total: parseInt(match[1]),
+        theory: parseInt(match[2]),
+        practical: parseInt(match[3]),
+      };
+    }
+    return { total: 0, theory: 0, practical: 0 };
+  }, []);
+
+  // Generate section options based on degree's total sections
+  const sectionOptions = useMemo(() => {
+    const selectedDegree = degrees.find((d) => d._id === formData.degreeId);
+    const totalSections = selectedDegree?.totalSections || 8;
+    return Array.from({ length: totalSections }, (_, i) =>
+      String.fromCharCode(65 + i)
+    );
+  }, [degrees, formData.degreeId]);
+
+  // Generate semester options based on degree's total semesters
+  const semesterOptions = useMemo(() => {
+    const selectedDegree = degrees.find((d) => d._id === formData.degreeId);
+    const totalSemesters = selectedDegree?.totalSemesters || 8;
+    return Array.from({ length: totalSemesters }, (_, i) => i + 1);
+  }, [degrees, formData.degreeId]);
+
+  // Calculate total credits
+  const calculateCredits = useCallback((subjectsList) => {
+    return subjectsList.reduce((sum, subject) => {
+      return sum + (parseInt(subject.totalCredits) || 0);
+    }, 0);
+  }, []);
+
+  const totalCredits = useMemo(
+    () => calculateCredits(selectedSubjects) + calculateCredits(extraSubjects),
+    [selectedSubjects, extraSubjects, calculateCredits]
+  );
+
+  const remainingCredits = MAX_CREDIT_HOURS - totalCredits;
+
+  // Get selected tutor details
+  const selectedTutor = useMemo(() => {
+    return tutors.find((t) => t.id === formData.tutorId) || {};
+  }, [tutors, formData.tutorId]);
+
+  // Get department name
+  const departmentName = useMemo(() => {
+    const dept = departments.find((d) => d.id === formData.departmentId);
+    return dept?.name || "";
+  }, [departments, formData.departmentId]);
+
+  // Get degree name
+  const degreeName = useMemo(() => {
+    const deg = degrees.find((d) => d.id === formData.degreeId);
+    return deg?.name || "";
+  }, [degrees, formData.degreeId]);
+
+  // API Functions
+  const fetchDepartments = useCallback(async () => {
+    try {
+      setLoading((prev) => ({ ...prev, departments: true }));
+      const response = await axios.get(
+        "/api/student/ugform/data?type=departments"
+      );
+      if (response.data.success) {
+        setDepartments(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      setError("Failed to load departments. Please refresh the page.");
+    } finally {
+      setLoading((prev) => ({ ...prev, departments: false }));
+    }
+  }, []);
+
+  const fetchTutors = useCallback(async () => {
+    try {
+      setLoading((prev) => ({ ...prev, tutors: true }));
+      const response = await axios.get(
+        "/api/student/ugform/data?type=tutor"
+      );
+      if (response.data.success) {
+        setTutors(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching tutors:", error);
+      setError("Failed to load tutors. Please refresh the page.");
+    } finally {
+      setLoading((prev) => ({ ...prev, tutors: false }));
+    }
+  }, []);
+
+  const fetchDegrees = useCallback(
+    async (departmentId) => {
+      try {
+        setLoading((prev) => ({ ...prev, degrees: true }));
+        const response = await axios.get(
+          `/api/student/ugform/data?type=degrees&departmentId=${departmentId}`
+        );
+        if (response.data.success) {
+          setDegrees(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching degrees:", error);
+        setError("Failed to load degree programs.");
+      } finally {
+        setLoading((prev) => ({ ...prev, degrees: false }));
+      }
+    },
+    []
+  );
+
+  const fetchSessions = useCallback(
+    async (degreeId) => {
+      try {
+        setLoading((prev) => ({ ...prev, sessions: true }));
+        const response = await axios.get(
+          `/api/student/ugform/data?type=sessions&degreeId=${degreeId}`
+        );
+        if (response.data.success) {
+          setSessions(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching sessions:", error);
+        setError("Failed to load sessions.");
+      } finally {
+        setLoading((prev) => ({ ...prev, sessions: false }));
+      }
+    },
+    []
+  );
+
+  const fetchSubjects = useCallback(
+    async (degreeId, semester, session) => {
+      try {
+        setLoading((prev) => ({ ...prev, subjects: true }));
+        setSubjects([]);
+
+        const response = await axios.get(
+          `/api/student/ugform/data?type=subjects&degreeId=${degreeId}&semester=${semester}&session=${session}`
+        );
+
+        if (response.data.success) {
+          setSubjects(response.data.data);
+          setSchemeInfo({
+            schemeName: response.data.schemeName,
+            session: response.data.session,
+            totalCredits: response.data.totalSemesterCredits,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+        setError("Failed to load subjects.");
+      } finally {
+        setLoading((prev) => ({ ...prev, subjects: false }));
+      }
+    },
+    []
+  );
+
+  // Fetch departments & tutors on mount
   useEffect(() => {
     fetchDepartments();
-  }, []);
+    fetchTutors();
+  }, [fetchDepartments, fetchTutors]);
 
   // Fetch degrees when department changes
   useEffect(() => {
@@ -60,6 +242,9 @@ function UgForm() {
         session: "",
         semester: "",
         section: "",
+        tutorId: "",
+        tutorName: "",
+        tutorEmail: "",
       }));
       setSessions([]);
       setSubjects([]);
@@ -67,7 +252,7 @@ function UgForm() {
       setExtraSubjects([]);
       setSchemeInfo(null);
     }
-  }, [formData.departmentId]);
+  }, [formData.departmentId, fetchDegrees]);
 
   // Fetch sessions when degree changes
   useEffect(() => {
@@ -78,13 +263,16 @@ function UgForm() {
         session: "",
         semester: "",
         section: "",
+        tutorId: "",
+        tutorName: "",
+        tutorEmail: "",
       }));
       setSubjects([]);
       setSelectedSubjects([]);
       setExtraSubjects([]);
       setSchemeInfo(null);
     }
-  }, [formData.degreeId]);
+  }, [formData.degreeId, fetchSessions]);
 
   // Fetch subjects when degree, session, and semester change
   useEffect(() => {
@@ -93,157 +281,68 @@ function UgForm() {
       setSelectedSubjects([]);
       setExtraSubjects([]);
     }
-  }, [formData.degreeId, formData.session, formData.semester]);
+  }, [formData.degreeId, formData.session, formData.semester, fetchSubjects]);
 
-  // Parse credit hours from format like "3(2-1)" or "2(2-0)"
-  const parseCreditHours = (creditHoursString) => {
-    if (!creditHoursString) return { total: 0, theory: 0, practical: 0 };
-    const match = creditHoursString.match(/^(\d+)\((\d+)-(\d+)\)$/);
-    if (match) {
-      return {
-        total: parseInt(match[1]),
-        theory: parseInt(match[2]),
-        practical: parseInt(match[3]),
-      };
-    }
-    return { total: 0, theory: 0, practical: 0 };
-  };
-
-  // Generate section options based on degree's total sections
-  const getSectionOptions = () => {
-    const selectedDegree = degrees.find((d) => d._id === formData.degreeId);
-    const totalSections = selectedDegree?.totalSections || 8;
-    return Array.from({ length: totalSections }, (_, i) =>
-      String.fromCharCode(65 + i),
-    );
-  };
-
-  // Generate semester options based on degree's total semesters
-  const getSemesterOptions = () => {
-    const selectedDegree = degrees.find((d) => d._id === formData.degreeId);
-    const totalSemesters = selectedDegree?.totalSemesters || 8;
-    return Array.from({ length: totalSemesters }, (_, i) => i + 1);
-  };
-
-  const fetchDepartments = async () => {
-    try {
-      setLoading((prev) => ({ ...prev, departments: true }));
-      const response = await axios.get(
-        "/api/form/form-submit?type=departments",
-      );
-      if (response.data.success) {
-        setDepartments(response.data.data);
+  // Auto-update tutor name and email when tutor is selected
+  useEffect(() => {
+    if (formData.tutorId && tutors.length > 0) {
+      const tutor = tutors.find((t) => t.id === formData.tutorId);
+      if (tutor) {
+        setFormData((prev) => ({
+          ...prev,
+          tutorName: tutor.name || "",
+          tutorEmail: tutor.email || "",
+        }));
       }
-    } catch (error) {
-      console.error("Error fetching departments:", error);
-      setError("Failed to load departments. Please refresh the page.");
-    } finally {
-      setLoading((prev) => ({ ...prev, departments: false }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        tutorName: "",
+        tutorEmail: "",
+      }));
     }
-  };
+  }, [formData.tutorId, tutors]);
 
-  const fetchDegrees = async (departmentId) => {
-    try {
-      setLoading((prev) => ({ ...prev, degrees: true }));
-      const response = await axios.get(
-        `/api/form/form-submit?type=degrees&departmentId=${departmentId}`,
-      );
-      if (response.data.success) {
-        setDegrees(response.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching degrees:", error);
-      setError("Failed to load degree programs.");
-    } finally {
-      setLoading((prev) => ({ ...prev, degrees: false }));
-    }
-  };
-
-  const fetchSessions = async (degreeId) => {
-    try {
-      setLoading((prev) => ({ ...prev, sessions: true }));
-      const response = await axios.get(
-        `/api/form/form-submit?type=sessions&degreeId=${degreeId}`,
-      );
-      if (response.data.success) {
-        setSessions(response.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching sessions:", error);
-      setError("Failed to load sessions.");
-    } finally {
-      setLoading((prev) => ({ ...prev, sessions: false }));
-    }
-  };
-
-  const fetchSubjects = async (degreeId, semester, session) => {
-    try {
-      setLoading((prev) => ({ ...prev, subjects: true }));
-      setSubjects([]);
-
-      const response = await axios.get(
-        `/api/form/form-submit?type=subjects&degreeId=${degreeId}&semester=${semester}&session=${session}`,
-      );
-
-      if (response.data.success) {
-        // Subjects already have totalCredits, theoryHours, practicalHours from backend
-        setSubjects(response.data.data);
-        setSchemeInfo({
-          schemeName: response.data.schemeName,
-          session: response.data.session,
-          totalCredits: response.data.totalSemesterCredits,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching subjects:", error);
-      setError("Failed to load subjects.");
-    } finally {
-      setLoading((prev) => ({ ...prev, subjects: false }));
-    }
-  };
-
-  // Calculate total credits
-  const calculateCredits = (subjectsList) => {
-    return subjectsList.reduce((sum, subject) => {
-      return sum + (parseInt(subject.totalCredits) || 0);
-    }, 0);
-  };
-
-  const totalCredits =
-    calculateCredits(selectedSubjects) + calculateCredits(extraSubjects);
-  const remainingCredits = MAX_CREDIT_HOURS - totalCredits;
-
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
-  };
+    setSuccessMessage("");
+  }, []);
 
-  const handleSubjectSelection = (subject) => {
-    const isSelected = selectedSubjects.some((s) => s._id === subject._id);
+  const handleSubjectSelection = useCallback(
+    (subject) => {
+      setSelectedSubjects((prev) => {
+        const isSelected = prev.some((s) => s._id === subject._id);
 
-    if (isSelected) {
-      setSelectedSubjects((prev) => prev.filter((s) => s._id !== subject._id));
-    } else {
-      const subjectCredits = parseInt(subject.totalCredits) || 0;
-      if (totalCredits + subjectCredits > MAX_CREDIT_HOURS) {
-        alert(
-          `Cannot add subject. Maximum ${MAX_CREDIT_HOURS} credit hours exceeded.`,
-        );
-        return;
-      }
-      setSelectedSubjects((prev) => [...prev, subject]);
-    }
-  };
+        if (isSelected) {
+          return prev.filter((s) => s._id !== subject._id);
+        } else {
+          const subjectCredits = parseInt(subject.totalCredits) || 0;
+          const currentTotal =
+            calculateCredits(prev) + calculateCredits(extraSubjects);
 
-  const addExtraSubject = () => {
+          if (currentTotal + subjectCredits > MAX_CREDIT_HOURS) {
+            alert(
+              `Cannot add subject. Maximum ${MAX_CREDIT_HOURS} credit hours exceeded.`
+            );
+            return prev;
+          }
+          return [...prev, subject];
+        }
+      });
+    },
+    [extraSubjects, calculateCredits]
+  );
+
+  const addExtraSubject = useCallback(() => {
     if (remainingCredits <= 0) {
       alert("No remaining credit hours available for extra subjects.");
       return;
     }
 
     const newSubject = {
-      _id: `extra-${Date.now()}`,
+      _id: `extra-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       code: "",
       name: "",
       totalCredits: 3,
@@ -254,9 +353,9 @@ function UgForm() {
       isExtra: true,
     };
     setExtraSubjects((prev) => [...prev, newSubject]);
-  };
+  }, [remainingCredits]);
 
-  const updateExtraSubject = (id, field, value) => {
+  const updateExtraSubject = useCallback((id, field, value) => {
     setExtraSubjects((prev) =>
       prev.map((subject) => {
         if (subject._id === id) {
@@ -281,15 +380,15 @@ function UgForm() {
           return updated;
         }
         return subject;
-      }),
+      })
     );
-  };
+  }, []);
 
-  const removeExtraSubject = (id) => {
+  const removeExtraSubject = useCallback((id) => {
     setExtraSubjects((prev) => prev.filter((subject) => subject._id !== id));
-  };
+  }, []);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     if (!formData.studentName.trim()) {
       setError("Student name is required");
       return false;
@@ -322,22 +421,71 @@ function UgForm() {
       setError("Please select a section");
       return false;
     }
+    if (!formData.tutorId) {
+      setError("Please select a tutor");
+      return false;
+    }
+    if (!formData.tutorName) {
+      setError("Tutor name is required");
+      return false;
+    }
+    if (!formData.tutorEmail) {
+      setError("Tutor email is required");
+      return false;
+    }
     if (selectedSubjects.length === 0) {
       setError("Please select at least one subject");
       return false;
     }
     if (totalCredits > MAX_CREDIT_HOURS) {
       setError(
-        `Maximum enrollment is ${MAX_CREDIT_HOURS} credit hours. Current: ${totalCredits}`,
+        `Maximum enrollment is ${MAX_CREDIT_HOURS} credit hours. Current: ${totalCredits}`
       );
       return false;
     }
     return true;
-  };
+  }, [formData, selectedSubjects, totalCredits]);
+
+  const handleReset = useCallback(() => {
+    setFormData({
+      departmentId: "",
+      degreeId: "",
+      session: "",
+      semester: "",
+      section: "",
+      admissionTo: "",
+      dateOfCommencement: new Date().toISOString().split("T")[0],
+      dateOfFirstEnrollment: "",
+      registeredNo: "",
+      studentName: "",
+      fatherName: "",
+      permanentAddress: "",
+      phoneCell: "",
+      email: "",
+      feePaidUpto: "",
+      feePaymentDate: "",
+      studentSignature: "",
+      tutorId: "",
+      tutorName: "",
+      tutorEmail: "",
+      formDate: new Date().toISOString().split("T")[0],
+    });
+    setSelectedSubjects([]);
+    setExtraSubjects([]);
+    setSessions([]);
+    setSubjects([]);
+    setSchemeInfo(null);
+    setIsSubmitted(false);
+    setSubmittedFormId(null);
+    setSubmittedFormNumber(null);
+    setError("");
+    setSuccessMessage("");
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     if (!validateForm()) {
       return;
@@ -346,7 +494,13 @@ function UgForm() {
     setLoading((prev) => ({ ...prev, submit: true }));
 
     try {
-      const selectedDegree = degrees.find((d) => d._id === formData.degreeId);
+      const selectedDegree = degrees.find((d) => d.id === formData.degreeId);
+      
+      console.log("Form data before submission:", {
+        tutorName: formData.tutorName,
+        tutorEmail: formData.tutorEmail,
+        tutorId: formData.tutorId
+      });
 
       const formSubmission = {
         ...formData,
@@ -371,18 +525,26 @@ function UgForm() {
         })),
       };
 
+      console.log("Final submission payload:", {
+        tutorName: formSubmission.tutorName,
+        tutorEmail: formSubmission.tutorEmail
+      });
+
       const response = await axios.post(
-        "/api/form/form-submit",
-        formSubmission,
+        "/api/student/ugform/submit",
+        formSubmission
       );
 
       if (response.data.success) {
+        console.log("Form saved successfully:", response.data);
+        
         setIsSubmitted(true);
         setSubmittedFormId(response.data.formId);
+        setSubmittedFormNumber(response.data.formNumber);
+        setSuccessMessage(
+          `Form submitted successfully! Form Number: ${response.data.formNumber}`
+        );
         setError("");
-
-        // Generate student copy PDF
-        generateFormPDF(response.data.formId, "student");
 
         // Reset form after successful submission
         setTimeout(() => {
@@ -391,58 +553,42 @@ function UgForm() {
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      setError(
-        error.response?.data?.message ||
-          "Failed to submit form. Please try again.",
-      );
+      
+      // Handle duplicate form error
+      if (error.response?.status === 409) {
+        setError(error.response.data.message);
+        // Optionally show the existing form number
+        if (error.response.data.existingFormNumber) {
+          setError(`You have already submitted a form. Form Number: ${error.response.data.existingFormNumber}`);
+        }
+      }
+      // Show validation errors
+      else if (error.response?.data?.errors) {
+        setError(error.response.data.errors.join(", "));
+      } else {
+        setError(
+          error.response?.data?.message ||
+            "Failed to submit form. Please try again."
+        );
+      }
     } finally {
       setLoading((prev) => ({ ...prev, submit: false }));
     }
   };
 
-  // const generateFormPDF = (formId, copyType = "student") => {
-  //   window.open(
-  //     `/api/form/generate-pdf?formId=${formId}&copy=${copyType}`,
-  //     "_blank",
-  //   );
-  // };
-
-  const handleReset = () => {
-    setFormData({
-      departmentId: "",
-      degreeId: "",
-      session: "",
-      semester: "",
-      section: "",
-      admissionTo: ``,
-      dateOfCommencement: new Date().toISOString().split("T")[0],
-      dateOfFirstEnrollment: "",
-      registeredNo: "",
-      studentName: "",
-      fatherName: "",
-      permanentAddress: "",
-      phoneCell: "",
-      email: "",
-      feePaidUpto: "",
-      feePaymentDate: "",
-      studentSignature: "",
-      formDate: new Date().toISOString().split("T")[0],
-    });
-    setSelectedSubjects([]);
-    setExtraSubjects([]);
-    setSessions([]);
-    setIsSubmitted(false);
-    setSubmittedFormId(null);
-    setError("");
-  };
-
-  const getDepartmentName = () => {
-    return departments.find((d) => d._id === formData.departmentId)?.name || "";
-  };
-
-  const getDegreeName = () => {
-    return degrees.find((d) => d._id === formData.degreeId)?.name || "";
-  };
+  // Loading states for different sections
+  if (loading.departments && departments.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading application...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white">
@@ -457,12 +603,14 @@ function UgForm() {
               <h2 className="text-base md:text-lg font-semibold mt-2 text-gray-700 dark:text-green-300">
                 Form for listing courses to be taken in{" "}
                 {formData.semester
-                  ? `${formData.semester}${getOrdinalSuffix(formData.semester)} Semester`
+                  ? `${formData.semester}${getOrdinalSuffix(
+                      formData.semester
+                    )} Semester`
                   : "_________ Semester"}{" "}
-                ({formData.admissionTo})
+                ({formData.admissionTo || "___________"})
               </h2>
               <h3 className="text-sm md:text-base font-bold mt-1 text-gray-800 dark:text-green-400">
-                {getDepartmentName() || "____________________________________"}
+                {departmentName || "____________________________________"}
               </h3>
               <div className="text-xs md:text-sm font-medium mt-2 text-gray-600 dark:text-gray-300">
                 UG-1 Form
@@ -480,6 +628,15 @@ function UgForm() {
           )}
 
           {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 p-3 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded">
+              <p className="text-green-600 dark:text-green-400 text-sm font-semibold">
+                ✓ {successMessage}
+              </p>
+            </div>
+          )}
+
+          {/* Submitted Success Message */}
           {isSubmitted && (
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded">
               <div className="flex items-start gap-3">
@@ -501,18 +658,11 @@ function UgForm() {
                     Form Submitted Successfully!
                   </p>
                   <p className="text-green-700 dark:text-green-400 text-sm">
-                    Form Number: {submittedFormId}
+                    Form Number: {submittedFormNumber}
                   </p>
                   <p className="text-green-600 dark:text-green-500 text-sm mt-1">
-                    Your enrollment has been submitted for tutor review. Student
-                    copy has been downloaded automatically.
+                    Your enrollment has been submitted for tutor review.
                   </p>
-                  <button
-                    onClick={() => generateFormPDF(submittedFormId, "student")}
-                    className="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded"
-                  >
-                    Download Student Copy Again
-                  </button>
                 </div>
               </div>
             </div>
@@ -541,7 +691,7 @@ function UgForm() {
                   >
                     <option value="">Select Department</option>
                     {departments.map((dept) => (
-                      <option key={dept._id} value={dept._id}>
+                      <option key={dept.id} value={dept.id}>
                         {dept.name}
                       </option>
                     ))}
@@ -568,7 +718,7 @@ function UgForm() {
                   >
                     <option value="">Select Degree</option>
                     {degrees.map((degree) => (
-                      <option key={degree._id} value={degree._id}>
+                      <option key={degree.id} value={degree.id}>
                         {degree.name}{" "}
                         {degree.shortName ? `(${degree.shortName})` : ""}
                       </option>
@@ -598,7 +748,7 @@ function UgForm() {
                   >
                     <option value="">Select Session</option>
                     {sessions.map((session, index) => (
-                      <option key={index} value={session.session}>
+                      <option key={`session-${index}-${session.session}`} value={session.session}>
                         {session.session}{" "}
                         {session.schemeName ? `- ${session.schemeName}` : ""}
                       </option>
@@ -625,16 +775,16 @@ function UgForm() {
                     disabled={!formData.degreeId || !formData.session}
                   >
                     <option value="">Select Semester</option>
-                    {getSemesterOptions().map((sem) => (
-                      <option key={sem} value={sem}>
+                    {semesterOptions.map((sem) => (
+                      <option key={`semester-${sem}`} value={sem}>
                         Semester {sem}{" "}
                         {sem === 1
                           ? "(1st)"
                           : sem === 2
-                            ? "(2nd)"
-                            : sem === 3
-                              ? "(3rd)"
-                              : `(${sem}th)`}
+                          ? "(2nd)"
+                          : sem === 3
+                          ? "(3rd)"
+                          : `(${sem}th)`}
                       </option>
                     ))}
                   </select>
@@ -654,8 +804,8 @@ function UgForm() {
                     disabled={!formData.degreeId}
                   >
                     <option value="">Select Section</option>
-                    {getSectionOptions().map((section) => (
-                      <option key={section} value={section}>
+                    {sectionOptions.map((section) => (
+                      <option key={`section-${section}`} value={section}>
                         Section {section}
                       </option>
                     ))}
@@ -673,7 +823,7 @@ function UgForm() {
                     value={formData.admissionTo}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-800 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    placeholder="e.g., Fall Spring or Winter 2025-2026"
+                    placeholder="e.g., Fall 2025"
                     required
                   />
                 </div>
@@ -812,8 +962,8 @@ function UgForm() {
                         totalCredits > MAX_CREDIT_HOURS
                           ? "text-red-600 dark:text-red-400"
                           : totalCredits > 0
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-gray-600 dark:text-gray-400"
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-gray-600 dark:text-gray-400"
                       }`}
                     >
                       {totalCredits}
@@ -895,7 +1045,7 @@ function UgForm() {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-bold text-gray-800 dark:text-white">
-                  Available Subjects for {getDegreeName()} - Semester{" "}
+                  Available Subjects for {degreeName} - Semester{" "}
                   {formData.semester}
                 </h3>
                 {formData.semester && subjects.length > 0 && (
@@ -966,7 +1116,7 @@ function UgForm() {
                     <tbody>
                       {subjects.map((subject) => {
                         const isSelected = selectedSubjects.some(
-                          (s) => s._id === subject._id,
+                          (s) => s._id === subject._id
                         );
                         const isDisabled =
                           !isSelected &&
@@ -980,8 +1130,8 @@ function UgForm() {
                               isSelected
                                 ? "bg-blue-50 dark:bg-blue-900/20"
                                 : isDisabled
-                                  ? "opacity-50"
-                                  : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                                ? "opacity-50"
+                                : "hover:bg-gray-50 dark:hover:bg-gray-800"
                             }
                           >
                             <td className="border-t border-gray-800 dark:border-gray-600 p-2 text-center">
@@ -1088,7 +1238,7 @@ function UgForm() {
                                   updateExtraSubject(
                                     subject._id,
                                     "code",
-                                    e.target.value.toUpperCase(),
+                                    e.target.value.toUpperCase()
                                   )
                                 }
                                 className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -1103,7 +1253,7 @@ function UgForm() {
                                   updateExtraSubject(
                                     subject._id,
                                     "name",
-                                    e.target.value,
+                                    e.target.value
                                   )
                                 }
                                 className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -1118,52 +1268,52 @@ function UgForm() {
                                   updateExtraSubject(
                                     subject._id,
                                     "totalCredits",
-                                    credits,
+                                    credits
                                   );
                                   // Auto-adjust theory/practical based on credit hours
                                   if (credits === 1) {
                                     updateExtraSubject(
                                       subject._id,
                                       "theoryHours",
-                                      1,
+                                      1
                                     );
                                     updateExtraSubject(
                                       subject._id,
                                       "practicalHours",
-                                      0,
+                                      0
                                     );
                                   } else if (credits === 2) {
                                     updateExtraSubject(
                                       subject._id,
                                       "theoryHours",
-                                      2,
+                                      2
                                     );
                                     updateExtraSubject(
                                       subject._id,
                                       "practicalHours",
-                                      0,
+                                      0
                                     );
                                   } else if (credits === 3) {
                                     updateExtraSubject(
                                       subject._id,
                                       "theoryHours",
-                                      2,
+                                      2
                                     );
                                     updateExtraSubject(
                                       subject._id,
                                       "practicalHours",
-                                      1,
+                                      1
                                     );
                                   } else if (credits === 4) {
                                     updateExtraSubject(
                                       subject._id,
                                       "theoryHours",
-                                      3,
+                                      3
                                     );
                                     updateExtraSubject(
                                       subject._id,
                                       "practicalHours",
-                                      1,
+                                      1
                                     );
                                   }
                                 }}
@@ -1182,13 +1332,13 @@ function UgForm() {
                                   updateExtraSubject(
                                     subject._id,
                                     "theoryHours",
-                                    parseInt(e.target.value),
+                                    parseInt(e.target.value)
                                   )
                                 }
                                 className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                               >
                                 {[0, 1, 2, 3, 4].map((hours) => (
-                                  <option key={hours} value={hours}>
+                                  <option key={`theory-${hours}`} value={hours}>
                                     {hours}
                                   </option>
                                 ))}
@@ -1201,13 +1351,13 @@ function UgForm() {
                                   updateExtraSubject(
                                     subject._id,
                                     "practicalHours",
-                                    parseInt(e.target.value),
+                                    parseInt(e.target.value)
                                   )
                                 }
                                 className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                               >
                                 {[0, 1, 2, 3].map((hours) => (
-                                  <option key={hours} value={hours}>
+                                  <option key={`practical-${hours}`} value={hours}>
                                     {hours}
                                   </option>
                                 ))}
@@ -1415,14 +1565,80 @@ function UgForm() {
                   />
                 </div>
               </div>
+
+              {/* Tutor Selection with Auto-populated Email */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">
+                    Select your Tutor <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="tutorId"
+                    value={formData.tutorId}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-800 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    required
+                    disabled={loading.tutors}
+                  >
+                    <option value="">Select Tutor</option>
+                    {tutors.map((tutor) => (
+                      <option key={tutor.id} value={tutor.id}>
+                        {tutor.name} - {tutor.designation || "Tutor"}
+                      </option>
+                    ))}
+                  </select>
+                  {loading.tutors && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Loading tutors...
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-300">
+                    Tutor's Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="tutorEmail"
+                    value={formData.tutorEmail}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-800 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Tutor's email"
+                    required
+                  />
+                  {formData.tutorId && !formData.tutorEmail && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      ⚠ Email not found for selected tutor
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Display selected tutor details */}
+              {formData.tutorId && selectedTutor && (
+                <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs">
+                  <p className="text-blue-800 dark:text-blue-300">
+                    <span className="font-semibold">Selected Tutor:</span>{" "}
+                    {selectedTutor.name}
+                    {selectedTutor.designation &&
+                      ` (${selectedTutor.designation})`}
+                  </p>
+                  {selectedTutor.department && (
+                    <p className="text-blue-600 dark:text-blue-400 mt-1">
+                      Department: {selectedTutor.department}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Action Buttons - Removed Print Button */}
+            {/* Action Buttons */}
             <div className="mt-6 pt-4 border-t border-gray-300 dark:border-gray-700 flex flex-wrap gap-3 justify-between">
               <button
                 type="button"
                 onClick={handleReset}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded text-sm"
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded text-sm transition-colors duration-200"
               >
                 Reset Form
               </button>
@@ -1432,9 +1648,12 @@ function UgForm() {
                 disabled={
                   loading.submit ||
                   totalCredits > MAX_CREDIT_HOURS ||
-                  totalCredits === 0
+                  totalCredits === 0 ||
+                  !formData.tutorId ||
+                  !formData.tutorName ||
+                  !formData.tutorEmail
                 }
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {loading.submit ? (
                   <span className="flex items-center gap-2">
@@ -1475,16 +1694,6 @@ function UgForm() {
       </div>
     </main>
   );
-}
-
-// Helper function for ordinal suffixes
-function getOrdinalSuffix(num) {
-  const j = num % 10;
-  const k = num % 100;
-  if (j === 1 && k !== 11) return "st";
-  if (j === 2 && k !== 12) return "nd";
-  if (j === 3 && k !== 13) return "rd";
-  return "th";
 }
 
 export default UgForm;

@@ -1,5 +1,3 @@
-"use client";
-
 import { Inter } from "next/font/google";
 import "@/app/styles/globals.css";
 

@@ -77,7 +77,7 @@ export default function Home() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/feeverify"
+                href="/student/fee"
                 className="inline-flex items-center justify-center px-8 py-3.5 text-lg font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 Start Fee Verification
@@ -199,7 +199,7 @@ export default function Home() {
             Join thousands of students who have streamlined their enrollment process
           </p>
           <Link
-            href="/feeverify"
+            href="/student/fee"
             className="inline-flex items-center justify-center px-10 py-4 text-lg font-semibold text-blue-600 bg-white hover:bg-gray-100 rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-1"
           >
             Start Verification Now
