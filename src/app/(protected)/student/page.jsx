@@ -1,21 +1,60 @@
-"use client";
+// app/student/page.jsx - Enhanced Student Dashboard
+"use client"
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
-import Loader from '@/components/ui/Loader';
-import { FaCheckCircle, FaClock, FaFileAlt, FaShieldAlt, FaArrowRight, FaCalendar, FaMoneyBillWave, FaBank } from 'react-icons/fa';
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import {
+  CheckCircle2,
+  Clock,
+  FileText,
+  Shield,
+  ArrowRight,
+  Calendar,
+  GraduationCap,
+  TrendingUp,
+  AlertCircle,
+  Bell,
+  RefreshCw
+} from "lucide-react"
+import Link from "next/link"
 
 export default function StudentDashboard() {
-  const router = useRouter();
-  const [feeRequest, setFeeRequest] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const router = useRouter()
+  const [feeRequest, setFeeRequest] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(new Date())
 
   useEffect(() => {
-    fetchUserAndRequest();
-  }, []);
+    fetchData()
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  async function fetchData() {
+    try {
+      const [userRes, feeRes] = await Promise.all([
+        fetch("/api/auth/me"),
+        fetch("/api/student/fee")
+      ])
+
+      if (userRes.ok) {
+        const userData = await userRes.json()
+        setUser(userData.user)
+      }
+
+      if (feeRes.ok) {
+        const feeData = await feeRes.json()
+        setFeeRequest(feeData.data)
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err)
+    } finally {
+      setLoading(false)
+      setLastUpdated(new Date())
+    }
+  }
 
   // Auto-redirect when approved
   useEffect(() => {
@@ -23,419 +62,359 @@ export default function StudentDashboard() {
       const redirectTimeout = setTimeout(() => {
         const formPath = feeRequest.studentType === "undergraduate" 
           ? "/student/form/ug1"
-          : "/student/form/gs10";
-        router.push(formPath);
-      }, 2000);
-      return () => clearTimeout(redirectTimeout);
+          : "/student/form/gs10"
+        router.push(formPath)
+      }, 3000)
+      return () => clearTimeout(redirectTimeout)
     }
-  }, [feeRequest?.status, feeRequest?.studentType, router]);
+  }, [feeRequest?.status, feeRequest?.studentType, router])
 
-  async function fetchUserAndRequest() {
-    try {
-      setLoading(true);
-      
-      // Fetch user info
-      const userRes = await fetch("/api/auth/me");
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        setUser(userData.user);
-      }
-
-      // Fetch fee request
-      const feeRes = await fetch("/api/student/fee");
-      if (feeRes.ok) {
-        const feeData = await feeRes.json();
-        if (feeData.data) {
-          setFeeRequest(feeData.data);
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    } finally {
-      setLoading(false);
+  const getStatusConfig = (status) => {
+    const configs = {
+      pending: { color: "amber", icon: Clock, label: "Pending Review" },
+      processing: { color: "blue", icon: RefreshCw, label: "Under Processing" },
+      tutor: { color: "violet", icon: FileText, label: "Tutor Review" },
+      manager: { color: "indigo", icon: Shield, label: "Manager Approval" },
+      approved: { color: "emerald", icon: CheckCircle2, label: "Approved" },
+      rejected: { color: "rose", icon: AlertCircle, label: "Rejected" }
     }
+    return configs[status] || configs.pending
   }
-
-  const getStatusBadgeVariant = (status) => {
-    switch (status) {
-      case "pending":
-        return "warning";
-      case "processing":
-        return "info";
-      case "approved":
-        return "success";
-      case "rejected":
-        return "danger";
-      default:
-        return "default";
-    }
-  };
-
-  const getStatusMessage = (status) => {
-    switch (status) {
-      case "pending":
-        return "Awaiting processing...";
-      case "processing":
-        return "Under review by fee section";
-      case "approved":
-        return "Approved! Redirecting to form...";
-      case "rejected":
-        return "Request rejected. Please contact fee section.";
-      default:
-        return "Status unknown";
-    }
-  };
 
   const StatusTimeline = () => {
     const stages = [
-      { key: "pending", label: "Fee Submitted", icon: FaCheckCircle },
-      { key: "processing", label: "Processing", icon: FaClock },
-      { key: "tutor", label: "Tutor Review", icon: FaFileAlt },
-      { key: "manager", label: "Manager Approval", icon: FaShieldAlt },
-      { key: "approved", label: "Approved", icon: FaCheckCircle },
-    ];
+      { key: "pending", label: "Fee Submitted", description: "Application received" },
+      { key: "processing", label: "Fee Office", description: "Document verification" },
+      { key: "tutor", label: "Tutor Review", description: "Academic advisor check" },
+      { key: "manager", label: "Final Approval", description: "Department manager" },
+      { key: "approved", label: "Completed", description: "Ready for enrollment" }
+    ]
 
-    const statusOrder = ["pending", "processing", "tutor", "manager", "approved"];
-    const currentIndex = statusOrder.indexOf(feeRequest?.status);
+    const currentIndex = stages.findIndex(s => s.key === feeRequest?.status)
+    const statusConfig = getStatusConfig(feeRequest?.status)
 
     return (
       <div className="mt-8">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-6">
-          Workflow Progress
-        </h3>
-        <div className="space-y-4">
-          {stages.map((stage, idx) => {
-            const isCompleted = idx <= currentIndex;
-            const isCurrent = idx === currentIndex;
-            const IconComponent = stage.icon;
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-6">Application Progress</h3>
+        <div className="relative">
+          {/* Progress Line */}
+          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
+          <div 
+            className="absolute left-4 top-0 w-0.5 bg-emerald-500 transition-all duration-500"
+            style={{ height: `${Math.max(0, (currentIndex / (stages.length - 1)) * 100)}%` }}
+          />
 
-            return (
-              <div key={stage.key} className="flex items-start">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 ${
-                  isCompleted
-                    ? isCurrent
-                      ? "bg-blue-600 text-white"
-                      : "bg-green-600 text-white"
-                    : "bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
-                }`}>
-                  <IconComponent className="w-4 h-4" />
-                </div>
-                <div className="ml-4">
-                  <p className={`text-sm font-medium ${
-                    isCurrent
-                      ? "text-blue-600 dark:text-blue-400"
-                      : isCompleted
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-gray-600 dark:text-gray-400"
-                  }`}>
-                    {stage.label}
-                  </p>
-                  {isCurrent && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {getStatusMessage(feeRequest?.status)}
+          <div className="space-y-6">
+            {stages.map((stage, idx) => {
+              const isCompleted = idx <= currentIndex
+              const isCurrent = idx === currentIndex
+              const StageIcon = isCompleted ? CheckCircle2 : Clock
+
+              return (
+                <div key={stage.key} className="relative flex items-start gap-4">
+                  <div className={`
+                    relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300
+                    ${isCompleted 
+                      ? 'bg-emerald-500 border-emerald-500 text-white' 
+                      : isCurrent
+                        ? `bg-${statusConfig.color}-500 border-${statusConfig.color}-500 text-white animate-pulse`
+                        : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400'
+                    }
+                  `}>
+                    <StageIcon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 pt-0.5">
+                    <p className={`text-sm font-medium ${isCurrent ? 'text-slate-900 dark:text-white' : isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                      {stage.label}
                     </p>
-                  )}
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {isCurrent ? statusConfig.label : stage.description}
+                    </p>
+                    {isCurrent && feeRequest?.statusMessage && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg inline-block">
+                        {feeRequest.statusMessage}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              )
+            })}
+          </div>
         </div>
       </div>
-    );
-  };
+    )
+  }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <Loader fullScreen={false} size="lg" />
-        </div>
-      </main>
-    );
-  }
-
-  if (feeRequest) {
-    return (
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-8">
-        <div className="max-w-5xl mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Student Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Welcome back, {user?.name || "Student"}
-            </p>
-          </div>
-
-          {/* Approval Alert */}
-          {feeRequest.status === "approved" && (
-            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
-              <p className="text-green-800 dark:text-green-300 text-sm">
-                ✓ Your fee verification has been approved! Redirecting to your form...
-              </p>
-            </div>
-          )}
-
-          {/* Main Status Card */}
-          <Card className="mb-6 border-l-4 border-l-blue-600 dark:border-l-blue-400">
-            <CardHeader className="border-0 pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle>Current Application Status</CardTitle>
-                <Badge variant={getStatusBadgeVariant(feeRequest.status)}>
-                  {feeRequest.status.charAt(0).toUpperCase() + feeRequest.status.slice(1)}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Request ID */}
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    Request ID
-                  </p>
-                  <p className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
-                    {feeRequest.requestId}
-                  </p>
-                </div>
-
-                {/* Submission Date */}
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
-                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    Submitted On
-                  </p>
-                  <p className="text-sm font-medium">
-                    {new Date(feeRequest.submittedAt).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              {/* Timeline */}
-              <StatusTimeline />
-            </CardContent>
-          </Card>
-
-          {/* Application Details */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* Student Info */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Student Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Name</p>
-                  <p className="text-sm font-medium">{feeRequest.studentName}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Registration #</p>
-                  <p className="text-sm font-medium">{feeRequest.registrationNumber}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Student Type</p>
-                  <p className="text-sm font-medium capitalize">
-                    {feeRequest.studentType === 'undergraduate' ? 'Undergraduate' : 'Postgraduate'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Degree Info */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Degree Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Program</p>
-                  <p className="text-sm font-medium">{feeRequest.degreeProgram}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Semester</p>
-                  <p className="text-sm font-medium">
-                    {feeRequest.semesterSeason} - Sem {feeRequest.semesterPaid}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Academic Year</p>
-                  <p className="text-sm font-medium">{feeRequest.semesterYear}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Fee Info */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Fee Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Amount Paid</p>
-                  <p className="text-sm font-medium">Rs. {feeRequest.feeAmount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Bank</p>
-                  <p className="text-sm font-medium">{feeRequest.bankName}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Voucher #</p>
-                  <p className="text-sm font-medium">{feeRequest.voucherNumber}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 justify-end">
-            <button
-              onClick={() => router.push('/student/fee')}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-            >
-              Submit Another Request
-              <FaArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Footer Info */}
-          <div className="mt-12 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-center">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong>Estimated Processing Time:</strong> 3-5 working days
-            </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-              For assistance: feesection@uaf.edu.pk | +92-41-9200161 Ext: 3303
-            </p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  // No request exists - show welcome screen
-  return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white py-8">
-      <div className="max-w-5xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Your Dashboard</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Manage your fee verification and enrollment applications
-          </p>
-        </div>
-
-        {/* Empty State Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Card 1 - Fee Verification */}
-          <Card className="hover:shadow-lg dark:hover:shadow-2xl transition-shadow">
-            <CardHeader className="border-0">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-4">
-                <FaMoneyBillWave className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <CardTitle>Fee Verification</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Submit your bank voucher for fee verification. Track your application status in real-time.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Card 2 - Track Status */}
-          <Card className="hover:shadow-lg dark:hover:shadow-2xl transition-shadow">
-            <CardHeader className="border-0">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-4">
-                <FaClock className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <CardTitle>Track Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Easily monitor your application through each approval stage.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Card 3 - Fast Processing */}
-          <Card className="hover:shadow-lg dark:hover:shadow-2xl transition-shadow">
-            <CardHeader className="border-0">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
-                <FaCheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <CardTitle>Quick Processing</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Get your application processed within 3-5 working days.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main CTA */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-lg p-8 md:p-12 text-center shadow-lg">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
-          <p className="text-blue-100 mb-8 text-lg">
-            Submit your fee verification documents to proceed with your enrollment
-          </p>
-          <button
-            onClick={() => router.push('/student/fee')}
-            className="px-8 py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-3 mx-auto"
-          >
-            <FaArrowRight className="w-5 h-5" />
-            Start Fee Verification
-          </button>
-        </div>
-
-        {/* Info Section */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FaFileAlt className="text-blue-600 dark:text-blue-400" />
-                Required Documents
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li>✓ Bank fee voucher (JPEG/PNG)</li>
-                <li>✓ Original CNIC</li>
-                <li>✓ Registration number</li>
-                <li>✓ Valid contact number</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FaShieldAlt className="text-green-600 dark:text-green-400" />
-                Process Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ol className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li>1. Submit fee verification form</li>
-                <li>2. Fee section reviews documents</li>
-                <li>3. Tutor approves submission</li>
-                <li>4. Manager final approval</li>
-              </ol>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Contact Footer */}
-        <div className="mt-12 p-6 bg-gray-100 dark:bg-gray-800 rounded-lg text-center border border-gray-200 dark:border-gray-700">
-          <h3 className="font-semibold mb-2">Need Help?</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Contact Fee Section: <strong>feesection@uaf.edu.pk</strong> | <strong>+92-41-9200161 Ext: 3303</strong>
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-            Hours: 9:00 AM - 4:00 PM (Monday to Friday)
-          </p>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Loading dashboard...</p>
         </div>
       </div>
-    </main>
-  );
+    )
+  }
+
+  // Has active fee request
+  if (feeRequest) {
+    const statusConfig = getStatusConfig(feeRequest.status)
+
+    return (
+      <div className="p-6 md:p-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Welcome back, {user?.name?.split(' ')[0] || "Student"}</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-${statusConfig.color}-100 dark:bg-${statusConfig.color}-900/30 text-${statusConfig.color}-700 dark:text-${statusConfig.color}-300`}>
+              <statusConfig.icon className="w-3.5 h-3.5" />
+              {statusConfig.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Approval Alert */}
+        {feeRequest.status === "approved" && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 flex items-start gap-3 animate-in slide-in-from-top-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <div>
+              <p className="font-semibold text-emerald-900 dark:text-emerald-100">Fee verification approved!</p>
+              <p className="text-sm text-emerald-700 dark:text-emerald-300 mt-1">Redirecting to course registration form...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Main Status Card */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-6 md:p-8 text-white shadow-xl">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <p className="text-slate-400 text-sm font-medium uppercase tracking-wider">Current Application</p>
+              <h2 className="text-2xl font-bold mt-1">Fee Verification Request</h2>
+            </div>
+            <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl">
+              <FileText className="w-6 h-6 text-emerald-400" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Request ID</p>
+              <p className="font-mono text-sm text-emerald-400">{feeRequest.requestId}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Submitted</p>
+              <p className="text-sm">{new Date(feeRequest.submittedAt).toLocaleDateString()}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Amount</p>
+              <p className="text-sm font-semibold">Rs. {feeRequest.feeAmount?.toLocaleString()}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Semester</p>
+              <p className="text-sm">{feeRequest.semesterPaid}th {feeRequest.semesterSeason}</p>
+            </div>
+          </div>
+
+          <StatusTimeline />
+        </div>
+
+        {/* Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <GraduationCap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Degree Info</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Program</span>
+                <span className="text-slate-900 dark:text-white font-medium">{feeRequest.degreeProgram}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Type</span>
+                <span className="text-slate-900 dark:text-white font-medium capitalize">{feeRequest.studentType}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Payment Details</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Bank</span>
+                <span className="text-slate-900 dark:text-white font-medium">{feeRequest.bankName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Voucher</span>
+                <span className="text-slate-900 dark:text-white font-medium">{feeRequest.voucherNumber}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
+                <Calendar className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Timeline</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Processing</span>
+                <span className="text-slate-900 dark:text-white font-medium">3-5 days</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Est. Completion</span>
+                <span className="text-slate-900 dark:text-white font-medium">
+                  {new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/student/fee"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30 hover:shadow-xl"
+          >
+            Submit Another Request
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Empty State - No active request
+  return (
+    <div className="p-6 md:p-8">
+      {/* Welcome Hero */}
+      <div className="text-center mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+          Welcome to Your Student Portal
+        </h1>
+        <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+          Manage your academic journey with ease. Submit fee verifications, track applications, and complete course registrations all in one place.
+        </p>
+      </div>
+
+      {/* Feature Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {[
+          {
+            icon: TrendingUp,
+            title: "Track Applications",
+            description: "Monitor your fee verification status in real-time through every approval stage.",
+            color: "blue"
+          },
+          {
+            icon: CheckCircle2,
+            title: "Fast Processing",
+            description: "Get your applications processed within 3-5 working days with automated notifications.",
+            color: "emerald"
+          },
+          {
+            icon: Shield,
+            title: "Secure & Reliable",
+            description: "Your academic records and payment information are protected with enterprise-grade security.",
+            color: "violet"
+          }
+        ].map((feature, idx) => (
+          <div key={idx} className="group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className={`w-12 h-12 bg-${feature.color}-50 dark:bg-${feature.color}-900/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+              <feature.icon className={`w-6 h-6 text-${feature.color}-600 dark:text-${feature.color}-400`} />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{feature.title}</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">{feature.description}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-8 md:p-12 text-center text-white shadow-xl">
+        <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Get Started?</h2>
+        <p className="text-emerald-100 mb-8 max-w-xl mx-auto">
+          Submit your fee verification to begin the enrollment process for the upcoming semester.
+        </p>
+        <Link
+          href="/student/fee"
+          className="inline-flex items-center gap-2 px-8 py-4 bg-white text-emerald-700 font-bold rounded-xl hover:bg-emerald-50 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+        >
+          Start Fee Verification
+          <ArrowRight className="w-5 h-5" />
+        </Link>
+      </div>
+
+      {/* Info Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" />
+            Required Documents
+          </h3>
+          <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+            {[
+              "Bank fee voucher (clear image/PDF)",
+              "Valid CNIC (front & back)",
+              "University registration number",
+              "Active contact number"
+            ].map((item, idx) => (
+              <li key={idx} className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-violet-600" />
+            Process Overview
+          </h3>
+          <ol className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+            {[
+              "Submit fee verification form online",
+              "Fee office reviews your documents",
+              "Tutor verifies academic eligibility",
+              "Manager provides final approval"
+            ].map((item, idx) => (
+              <li key={idx} className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-xs flex items-center justify-center flex-shrink-0 font-medium">
+                  {idx + 1}
+                </span>
+                {item}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+
+      {/* Contact Footer */}
+      <div className="mt-12 bg-slate-100 dark:bg-slate-800 rounded-2xl p-6 text-center border border-slate-200 dark:border-slate-700">
+        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Need Help?</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Contact Fee Section: <strong>feesection@uaf.edu.pk</strong> | <strong>+92-41-9200161 Ext: 3303</strong>
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
+          Office Hours: 9:00 AM - 4:00 PM (Monday to Friday)
+        </p>
+      </div>
+    </div>
+  )
 }

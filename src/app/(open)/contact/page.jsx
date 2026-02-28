@@ -1,6 +1,17 @@
+// ContactPage - Enhanced with modern office design
 'use client';
 
 import { useState } from 'react';
+import { 
+  MapPin, 
+  Mail, 
+  Phone, 
+  Clock, 
+  Send, 
+  CheckCircle2,
+  MessageSquare,
+  Building2
+} from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
@@ -14,6 +25,7 @@ export default function ContactPage() {
     message: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,152 +36,214 @@ export default function ContactPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would send the message
     console.log('Contact form submitted:', formData);
     setSubmitted(true);
     setFormData({ name: '', email: '', subject: '', message: '' });
+    setTimeout(() => setSubmitted(false), 5000);
+  };
+
+  const contactInfo = [
+    {
+      icon: Building2,
+      title: "Office Location",
+      content: "Main Campus, University Office",
+      subContent: "City, State 12345",
+      color: "blue"
+    },
+    {
+      icon: Mail,
+      title: "Email",
+      content: "support@enrollment.edu",
+      subContent: "admissions@enrollment.edu",
+      color: "emerald"
+    },
+    {
+      icon: Phone,
+      title: "Phone",
+      content: "+1 (555) 123-4567",
+      subContent: "Support: +1 (555) 987-6543",
+      color: "violet"
+    },
+    {
+      icon: Clock,
+      title: "Office Hours",
+      content: "Mon - Fri: 8:00 AM - 5:00 PM",
+      subContent: "Sat: 9:00 AM - 1:00 PM",
+      color: "amber"
+    }
+  ];
+
+  const colorClasses = {
+    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
+    emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400",
+    violet: "bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400",
+    amber: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
   };
 
   return (
-    <div className="bg-white py-16">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900">Contact Us</h1>
-          <p className="mt-4 text-xl text-gray-500">
-            Get in touch with our support team
+        
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-medium mb-6">
+            <MessageSquare className="w-4 h-4" />
+            Get in Touch
+          </div>
+          <h1 className="text-5xl font-bold text-slate-900 dark:text-white mb-6">
+            Contact Us
+          </h1>
+          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            Have questions about the enrollment system? Our dedicated support team is here to help you.
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Contact Information */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Get in touch</h2>
-            <p className="mt-2 text-gray-600">
-              Have questions about the enrollment system? Our team is here to help.
-            </p>
-
-            <div className="mt-8 space-y-6">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Office Location</h3>
-                  <p className="mt-1 text-gray-600">
-                    Main Campus, University Office<br />
-                    City, State 12345
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Email</h3>
-                  <p className="mt-1 text-gray-600">
-                    support@enrollment.edu<br />
-                    admissions@enrollment.edu
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Phone</h3>
-                  <p className="mt-1 text-gray-600">
-                    Main: +1 (555) 123-4567<br />
-                    Support: +1 (555) 987-6543
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">Office Hours</h3>
-                  <p className="mt-1 text-gray-600">
-                    Monday - Friday: 8:00 AM - 5:00 PM<br />
-                    Saturday: 9:00 AM - 1:00 PM<br />
-                    Sunday: Closed
-                  </p>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Contact Information - Left Side */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+              {contactInfo.map((info, index) => (
+                <Card 
+                  key={index} 
+                  className="p-6 hover:shadow-lg transition-all duration-300 group border-l-4 border-l-transparent hover:border-l-current dark:hover:border-l-current"
+                  style={{ borderLeftColor: 'inherit' }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-xl ${colorClasses[info.color]} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                      <info.icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+                        {info.title}
+                      </h3>
+                      <p className="text-slate-700 dark:text-slate-300 font-medium">
+                        {info.content}
+                      </p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        {info.subContent}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
+
+            {/* Quick Support Card */}
+            <Card className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-0">
+              <h3 className="font-bold text-lg mb-2">Emergency Support</h3>
+              <p className="text-blue-100 mb-4 text-sm">
+                For urgent enrollment issues during peak periods, use our priority hotline.
+              </p>
+              <div className="flex items-center gap-3 text-lg font-bold">
+                <Phone className="w-5 h-5" />
+                +1 (555) 999-HELP
+              </div>
+            </Card>
           </div>
 
-          {/* Contact Form */}
-          <Card>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a message</h2>
-            
-            {submitted && (
-              <Alert type="success" className="mb-4" onClose={() => setSubmitted(false)}>
-                Thank you for your message! We'll get back to you soon.
-              </Alert>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Your Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-              
-              <Input
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-              
-              <Input
-                label="Subject"
-                name="subject"
-                value={formData.subject}
-                onChange={handleChange}
-                required
-              />
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Message <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="message"
-                  rows={5}
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
+          {/* Contact Form - Right Side */}
+          <div className="lg:col-span-3">
+            <Card className="p-8 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                  <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    Send us a Message
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    We'll respond within 24 hours
+                  </p>
+                </div>
               </div>
 
-              <Button type="submit" variant="primary" size="lg" className="w-full">
-                Send Message
-              </Button>
-            </form>
-          </Card>
+              {submitted && (
+                <Alert 
+                  type="success" 
+                  className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
+                  onClose={() => setSubmitted(false)}
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Thank you! Your message has been sent successfully.</span>
+                  </div>
+                </Alert>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="relative">
+                    <Input
+                      label="Your Name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField('name')}
+                      onBlur={() => setFocusedField(null)}
+                      required
+                      className={`transition-all duration-200 ${focusedField === 'name' ? 'ring-2 ring-blue-500/20' : ''}`}
+                    />
+                  </div>
+                  <div className="relative">
+                    <Input
+                      label="Email Address"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField(null)}
+                      required
+                      className={`transition-all duration-200 ${focusedField === 'email' ? 'ring-2 ring-blue-500/20' : ''}`}
+                    />
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <Input
+                    label="Subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField('subject')}
+                    onBlur={() => setFocusedField(null)}
+                    required
+                    className={`transition-all duration-200 ${focusedField === 'subject' ? 'ring-2 ring-blue-500/20' : ''}`}
+                  />
+                </div>
+
+                <div className="relative">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    Message <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    name="message"
+                    rows={5}
+                    value={formData.message}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField('message')}
+                    onBlur={() => setFocusedField(null)}
+                    required
+                    placeholder="Describe your issue or question in detail..."
+                    className={`w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 resize-none`}
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  size="lg" 
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-xl font-semibold shadow-lg shadow-blue-200 dark:shadow-blue-900/30 hover:shadow-xl transition-all duration-300"
+                >
+                  <Send className="w-5 h-5 mr-2" />
+                  Send Message
+                </Button>
+              </form>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
-}
+} 
