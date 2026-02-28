@@ -1,18 +1,50 @@
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 import connectDB from "@/lib/db";
 import UgForm from "@/models/UgForm";
+import User from "@/models/User";
 // IMPORT THE MODELS TO REGISTER THEM
 import Department from "@/models/Department";
 import Degree from "@/models/Degree";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 // GET - Fetch forms for manager verification
 export async function GET(req) {
   await connectDB();
   try {
+    // authenticate manager
+    const token = req.cookies.get("token")?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, message: "Not authenticated" }, { status: 401 });
+    }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+        return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+      }
+      throw err;
+    }
+    const user = await User.findById(decoded.id).select("department role");
+    if (!user) {
+      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+    }
+    if (user.role !== "manager") {
+      return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+    }
+    const managerDept = user.department || "";
+    if (!managerDept) {
+      return NextResponse.json({ success: false, message: "Manager has no department assigned" }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
 
-    let query = {};
+    let query = {
+      departmentName: managerDept
+    };
 
     if (status === "pending") {
       query.status = "tutor_approved"; // Forms ready for manager verification
@@ -31,10 +63,10 @@ export async function GET(req) {
         ...(status === "approved" ? { managerApprovedAt: -1 } : { tutorActionAt: -1 })
       });
 
-    // Calculate statistics
-    const pending = await UgForm.countDocuments({ status: "tutor_approved" });
-    const approved = await UgForm.countDocuments({ status: "manager_approved" });
-    const rejected = await UgForm.countDocuments({ status: "collector_rejected" });
+    // Calculate statistics (restrict to manager department)
+    const pending = await UgForm.countDocuments({ status: "tutor_approved", departmentName: managerDept });
+    const approved = await UgForm.countDocuments({ status: "manager_approved", departmentName: managerDept });
+    const rejected = await UgForm.countDocuments({ status: "collector_rejected", departmentName: managerDept });
     const total = pending + approved + rejected;
 
     const formattedForms = forms.map((form) => ({
@@ -94,6 +126,32 @@ export async function GET(req) {
 export async function PUT(req) {
   await connectDB();
   try {
+    // authenticate manager
+    const token = req.cookies.get("token")?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, message: "Not authenticated" }, { status: 401 });
+    }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+        return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+      }
+      throw err;
+    }
+    const user = await User.findById(decoded.id).select("department role");
+    if (!user) {
+      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+    }
+    if (user.role !== "manager") {
+      return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+    }
+    const managerDept = user.department || "";
+    if (!managerDept) {
+      return NextResponse.json({ success: false, message: "Manager has no department assigned" }, { status: 403 });
+    }
+
     const body = await req.json();
     const { formId, action, verificationNotes, rejectionReason } = body;
 
@@ -115,6 +173,18 @@ export async function PUT(req) {
           message: "Form not found",
         },
         { status: 404 }
+      );
+    }
+
+    // ensure manager only acts on forms in their department
+    const formDeptName = form.department?.name || form.departmentName;
+    if (formDeptName !== managerDept) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You are not authorized to modify this form",
+        },
+        { status: 403 }
       );
     }
 
