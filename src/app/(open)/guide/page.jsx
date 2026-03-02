@@ -49,7 +49,7 @@ export default function GuidePage() {
           'Use registration number provided by the university',
           'Default password is your CNIC/ID number',
           'Change password after first login for security',
-          'Enable two-factor authentication if available'
+         
         ],
         tip: 'Keep your login credentials secure and never share them.'
       },
