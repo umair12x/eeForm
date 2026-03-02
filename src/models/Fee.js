@@ -177,11 +177,7 @@ const FeeSchema = new mongoose.Schema(
       ref: "User",
     },
     
-    // Verification
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
+  
   },
   { timestamps: true }
 );
