@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import AdminNavbar from "@/components/AdminNavbar"
+import AdminNavbar from "@/components/layout/AdminNavbar"
 
 export default function AdminLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
