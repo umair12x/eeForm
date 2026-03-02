@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Degree from "@/models/Degree";
 
+export const revalidate = 3600;
+
 export async function GET() {
   await connectDB();
   

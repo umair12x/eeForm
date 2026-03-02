@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ClipboardCheck,
   Search,
@@ -31,113 +31,110 @@ import {
   Inbox,
   CheckCheck,
   Ban,
-  BookOpen
-} from "lucide-react"
-
-export const metadata = {
-  title: "Manager Dashboard | UAF Digital Enrollment Portal",
-  description: "Review and verify student enrollment forms. Approve or request revisions from tutors.",
-};
+  BookOpen,
+} from "lucide-react";
 
 export default function ManagerDashboard() {
-  const [forms, setForms] = useState([])
-  const [filteredForms, setFilteredForms] = useState([])
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("pending")
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [selectedForm, setSelectedForm] = useState(null)
-  const [verificationNotes, setVerificationNotes] = useState("")
-  const [showApproveModal, setShowApproveModal] = useState(false)
-  const [showRejectModal, setShowRejectModal] = useState(false)
-  const [showViewModal, setShowViewModal] = useState(false)
-  const [rejectionReason, setRejectionReason] = useState("")
-  const [actionLoading, setActionLoading] = useState(false)
-  const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [forms, setForms] = useState([]);
+  const [filteredForms, setFilteredForms] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("pending");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedForm, setSelectedForm] = useState(null);
+  const [verificationNotes, setVerificationNotes] = useState("");
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [stats, setStats] = useState({
     pending: 0,
     approved: 0,
     rejected: 0,
     total: 0,
-  })
-  const [lastUpdated, setLastUpdated] = useState(new Date())
-  const [expandedRows, setExpandedRows] = useState([])
+  });
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [expandedRows, setExpandedRows] = useState([]);
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
-    fetchForms()
-    const interval = setInterval(() => fetchForms(true), 30000)
-    return () => clearInterval(interval)
-  }, [statusFilter])
+    fetchForms();
+    const interval = setInterval(() => fetchForms(true), 30000);
+    return () => clearInterval(interval);
+  }, [statusFilter]);
 
   useEffect(() => {
     if (search.trim() === "") {
-      setFilteredForms(forms)
+      setFilteredForms(forms);
     } else {
       const filtered = forms.filter(
         (form) =>
           form.studentName?.toLowerCase().includes(search.toLowerCase()) ||
           form.registeredNo?.toLowerCase().includes(search.toLowerCase()) ||
           form.formNumber?.toLowerCase().includes(search.toLowerCase()) ||
-          form.degreeName?.toLowerCase().includes(search.toLowerCase())
-      )
-      setFilteredForms(filtered)
+          form.degreeName?.toLowerCase().includes(search.toLowerCase()),
+      );
+      setFilteredForms(filtered);
     }
-  }, [search, forms])
+  }, [search, forms]);
 
   const fetchForms = async (silent = false) => {
     try {
-      if (!silent) setLoading(true)
-      else setRefreshing(true)
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
 
-      const response = await fetch(`/api/manager/approval?status=${statusFilter}`)
-      const data = await response.json()
+      const response = await fetch(
+        `/api/manager/approval?status=${statusFilter}`,
+      );
+      const data = await response.json();
 
       if (data.success) {
-        setForms(data.data)
-        setFilteredForms(data.data)
-        setStats(data.stats)
-        setLastUpdated(new Date())
+        setForms(data.data);
+        setFilteredForms(data.data);
+        setStats(data.stats);
+        setLastUpdated(new Date());
       } else {
-        throw new Error(data.message || "Failed to fetch forms")
+        throw new Error(data.message || "Failed to fetch forms");
       }
     } catch (error) {
-      console.error("Error fetching forms:", error)
-      if (!silent) alert("Failed to load forms. Please refresh the page.")
+      console.error("Error fetching forms:", error);
+      if (!silent) alert("Failed to load forms. Please refresh the page.");
     } finally {
-      setLoading(false)
-      setRefreshing(false)
+      setLoading(false);
+      setRefreshing(false);
     }
-  }
+  };
 
   const handleApproveForm = (form) => {
-    setSelectedForm(form)
-    setVerificationNotes("")
-    setShowApproveModal(true)
-  }
+    setSelectedForm(form);
+    setVerificationNotes("");
+    setShowApproveModal(true);
+  };
 
   const handleRejectForm = (form) => {
-    setSelectedForm(form)
-    setRejectionReason("")
-    setShowRejectModal(true)
-  }
+    setSelectedForm(form);
+    setRejectionReason("");
+    setShowRejectModal(true);
+  };
 
   const handleViewForm = (form) => {
-    setSelectedForm(form)
-    setShowViewModal(true)
-  }
+    setSelectedForm(form);
+    setShowViewModal(true);
+  };
 
   const closeModal = () => {
-    setSelectedForm(null)
-    setShowApproveModal(false)
-    setShowRejectModal(false)
-    setShowViewModal(false)
-    setVerificationNotes("")
-    setRejectionReason("")
-  }
+    setSelectedForm(null);
+    setShowApproveModal(false);
+    setShowRejectModal(false);
+    setShowViewModal(false);
+    setVerificationNotes("");
+    setRejectionReason("");
+  };
 
   const processApproval = async () => {
-    setActionLoading(true)
+    setActionLoading(true);
     try {
       const response = await fetch("/api/manager/approval", {
         method: "PUT",
@@ -147,40 +144,45 @@ export default function ManagerDashboard() {
           action: "approve",
           verificationNotes: verificationNotes,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
         // Optimistic update
         setForms((prev) =>
           prev.map((f) =>
             f._id === selectedForm._id
-              ? { ...f, status: "manager_approved", managerApprovedAt: new Date().toISOString(), verificationNotes }
-              : f
-          )
-        )
-        closeModal()
+              ? {
+                  ...f,
+                  status: "manager_approved",
+                  managerApprovedAt: new Date().toISOString(),
+                  verificationNotes,
+                }
+              : f,
+          ),
+        );
+        closeModal();
         // Refresh to get accurate stats
-        fetchForms(true)
+        fetchForms(true);
       } else {
-        throw new Error(data.message || "Approval failed")
+        throw new Error(data.message || "Approval failed");
       }
     } catch (error) {
-      console.error("Error approving form:", error)
-      alert("Failed to approve form. Please try again.")
+      console.error("Error approving form:", error);
+      alert("Failed to approve form. Please try again.");
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
 
   const processRejection = async () => {
     if (!rejectionReason.trim()) {
-      alert("Please provide a reason for rejection")
-      return
+      alert("Please provide a reason for rejection");
+      return;
     }
 
-    setActionLoading(true)
+    setActionLoading(true);
     try {
       const response = await fetch("/api/manager/approval", {
         method: "PUT",
@@ -190,59 +192,66 @@ export default function ManagerDashboard() {
           action: "reject",
           rejectionReason: rejectionReason,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
         // Optimistic update
         setForms((prev) =>
           prev.map((f) =>
             f._id === selectedForm._id
-              ? { ...f, status: "collector_rejected", collectorRejectedAt: new Date().toISOString(), rejectionReason }
-              : f
-          )
-        )
-        closeModal()
-        fetchForms(true)
+              ? {
+                  ...f,
+                  status: "collector_rejected",
+                  collectorRejectedAt: new Date().toISOString(),
+                  rejectionReason,
+                }
+              : f,
+          ),
+        );
+        closeModal();
+        fetchForms(true);
       } else {
-        throw new Error(data.message || "Rejection failed")
+        throw new Error(data.message || "Rejection failed");
       }
     } catch (error) {
-      console.error("Error rejecting form:", error)
-      alert("Failed to reject form. Please try again.")
+      console.error("Error rejecting form:", error);
+      alert("Failed to reject form. Please try again.");
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
 
   const generateCompletePDF = async (formId) => {
-    setDownloadingPdf(formId)
+    setDownloadingPdf(formId);
     try {
-      const response = await fetch(`/api/manager/pdf?formId=${formId}`)
-      const blob = await response.blob()
+      const response = await fetch(`/api/manager/pdf?formId=${formId}`);
+      const blob = await response.blob();
 
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.setAttribute("download", `UG1-COMPLETE-${formId}.pdf`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `UG1-COMPLETE-${formId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error generating PDF:", error)
-      alert("Failed to generate PDF. Please try again.")
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
     } finally {
-      setDownloadingPdf(null)
+      setDownloadingPdf(null);
     }
-  }
+  };
 
   const toggleRowExpansion = (formId) => {
     setExpandedRows((prev) =>
-      prev.includes(formId) ? prev.filter((id) => id !== formId) : [...prev, formId]
-    )
-  }
+      prev.includes(formId)
+        ? prev.filter((id) => id !== formId)
+        : [...prev, formId],
+    );
+  };
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -255,7 +264,7 @@ export default function ManagerDashboard() {
           text: "text-amber-700 dark:text-amber-300",
           label: "Pending Verification",
           dot: "bg-amber-500",
-        }
+        };
       case "manager_approved":
         return {
           icon: CheckCheck,
@@ -265,7 +274,7 @@ export default function ManagerDashboard() {
           text: "text-emerald-700 dark:text-emerald-300",
           label: "Approved & Enrolled",
           dot: "bg-emerald-500",
-        }
+        };
       case "collector_rejected":
         return {
           icon: Ban,
@@ -275,7 +284,7 @@ export default function ManagerDashboard() {
           text: "text-rose-700 dark:text-rose-300",
           label: "Rejected",
           dot: "bg-rose-500",
-        }
+        };
       default:
         return {
           icon: FileText,
@@ -285,31 +294,31 @@ export default function ManagerDashboard() {
           text: "text-slate-700 dark:text-slate-300",
           label: status,
           dot: "bg-slate-400",
-        }
+        };
     }
-  }
+  };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "—"
-    const date = new Date(dateString)
+    if (!dateString) return "—";
+    const date = new Date(dateString);
     return date.toLocaleDateString("en-PK", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   const formatDateTime = (dateString) => {
-    if (!dateString) return "—"
-    const date = new Date(dateString)
+    if (!dateString) return "—";
+    const date = new Date(dateString);
     return date.toLocaleString("en-PK", {
       day: "2-digit",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    })
-  }
+    });
+  };
 
   const statCards = [
     {
@@ -344,7 +353,7 @@ export default function ManagerDashboard() {
       color: "indigo",
       trend: "All time",
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -372,7 +381,9 @@ export default function ManagerDashboard() {
               disabled={refreshing}
               className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50 shadow-sm"
             >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              />
               Refresh
             </button>
           </div>
@@ -385,7 +396,8 @@ export default function ManagerDashboard() {
               key={key}
               onClick={() => setStatusFilter(key === "total" ? "all" : key)}
               className={`relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl p-5 border-2 transition-all text-left ${
-                (key === "total" && statusFilter === "all") || statusFilter === key
+                (key === "total" && statusFilter === "all") ||
+                statusFilter === key
                   ? `border-${color}-500 shadow-lg shadow-${color}-100 dark:shadow-${color}-900/20`
                   : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
@@ -395,17 +407,28 @@ export default function ManagerDashboard() {
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     {label}
                   </p>
-                  <p className={`text-3xl font-bold mt-1 text-${color}-600 dark:text-${color}-400`}>
+                  <p
+                    className={`text-3xl font-bold mt-1 text-${color}-600 dark:text-${color}-400`}
+                  >
                     {value}
                   </p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{trend}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    {trend}
+                  </p>
                 </div>
-                <div className={`p-3 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl`}>
-                  <Icon className={`w-6 h-6 text-${color}-600 dark:text-${color}-400`} />
+                <div
+                  className={`p-3 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl`}
+                >
+                  <Icon
+                    className={`w-6 h-6 text-${color}-600 dark:text-${color}-400`}
+                  />
                 </div>
               </div>
-              {(key === "total" && statusFilter === "all") || statusFilter === key ? (
-                <div className={`absolute bottom-0 left-0 right-0 h-1 bg-${color}-500`} />
+              {(key === "total" && statusFilter === "all") ||
+              statusFilter === key ? (
+                <div
+                  className={`absolute bottom-0 left-0 right-0 h-1 bg-${color}-500`}
+                />
               ) : null}
             </button>
           ))}
@@ -454,12 +477,24 @@ export default function ManagerDashboard() {
               <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="text-left p-4 font-semibold text-slate-700 dark:text-slate-300 w-10"></th>
-                  <th className="text-left p-4 font-semibold text-slate-700 dark:text-slate-300">Form Details</th>
-                  <th className="text-left p-4 font-semibold text-slate-700 dark:text-slate-300">Student</th>
-                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">Program</th>
-                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">Credits</th>
-                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                  <th className="text-left p-4 font-semibold text-slate-700 dark:text-slate-300">
+                    Form Details
+                  </th>
+                  <th className="text-left p-4 font-semibold text-slate-700 dark:text-slate-300">
+                    Student
+                  </th>
+                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">
+                    Program
+                  </th>
+                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">
+                    Credits
+                  </th>
+                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">
+                    Status
+                  </th>
+                  <th className="text-center p-4 font-semibold text-slate-700 dark:text-slate-300">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -468,7 +503,9 @@ export default function ManagerDashboard() {
                     <td colSpan="7" className="p-12 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                        <p className="mt-4 text-slate-500 dark:text-slate-400">Loading forms...</p>
+                        <p className="mt-4 text-slate-500 dark:text-slate-400">
+                          Loading forms...
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -478,15 +515,17 @@ export default function ManagerDashboard() {
                       <div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
                         <Inbox className="w-16 h-16 mb-4" />
                         <p className="text-lg font-medium">No forms found</p>
-                        <p className="text-sm mt-1">Try adjusting your search or filters</p>
+                        <p className="text-sm mt-1">
+                          Try adjusting your search or filters
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   filteredForms.map((form) => {
-                    const statusConfig = getStatusConfig(form.status)
-                    const StatusIcon = statusConfig.icon
-                    const isExpanded = expandedRows.includes(form._id)
+                    const statusConfig = getStatusConfig(form.status);
+                    const StatusIcon = statusConfig.icon;
+                    const isExpanded = expandedRows.includes(form._id);
 
                     return (
                       <React.Fragment key={form._id}>
@@ -536,7 +575,9 @@ export default function ManagerDashboard() {
                             <span
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+                              />
                               <StatusIcon className="w-3 h-3" />
                               {statusConfig.label}
                             </span>
@@ -634,20 +675,28 @@ export default function ManagerDashboard() {
                                     </h4>
                                     <div className="space-y-1 text-sm">
                                       <p className="flex items-center gap-2">
-                                        <span className="text-slate-600 dark:text-slate-400">Tutor:</span>
+                                        <span className="text-slate-600 dark:text-slate-400">
+                                          Tutor:
+                                        </span>
                                         {form.tutorSignature ? (
                                           <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
                                             <CheckCircle2 className="w-3 h-3" />
                                             Signed
                                           </span>
                                         ) : (
-                                          <span className="text-amber-600 dark:text-amber-400">Pending</span>
+                                          <span className="text-amber-600 dark:text-amber-400">
+                                            Pending
+                                          </span>
                                         )}
                                       </p>
                                       <p className="flex items-center gap-2">
-                                        <span className="text-slate-600 dark:text-slate-400">Student:</span>
+                                        <span className="text-slate-600 dark:text-slate-400">
+                                          Student:
+                                        </span>
                                         <span className="text-blue-600 dark:text-blue-400 font-medium">
-                                          {form.studentSignature ? "Signed" : "Pending"}
+                                          {form.studentSignature
+                                            ? "Signed"
+                                            : "Pending"}
                                         </span>
                                       </p>
                                     </div>
@@ -674,45 +723,52 @@ export default function ManagerDashboard() {
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                      {form.selectedSubjects?.map((subject, idx) => (
-                                        <tr key={idx}>
-                                          <td className="p-3 font-mono text-indigo-600 dark:text-indigo-400">
-                                            {subject.code}
-                                          </td>
-                                          <td className="p-3 text-slate-900 dark:text-white">
-                                            {subject.name}
-                                          </td>
-                                          <td className="p-3 text-center text-slate-600 dark:text-slate-400">
-                                            {subject.creditHours}
-                                          </td>
-                                          <td className="p-3 text-center">
-                                            <span className="px-2 py-1 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                                              Regular
-                                            </span>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                      {form.extraSubjects?.map((subject, idx) => (
-                                        <tr key={idx} className="bg-amber-50/50 dark:bg-amber-900/10">
-                                          <td className="p-3 font-mono text-amber-600 dark:text-amber-400">
-                                            {subject.code}
-                                          </td>
-                                          <td className="p-3 text-slate-900 dark:text-white">
-                                            {subject.name}
-                                            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
-                                              (Extra)
-                                            </span>
-                                          </td>
-                                          <td className="p-3 text-center text-slate-600 dark:text-slate-400">
-                                            {subject.creditHours}
-                                          </td>
-                                          <td className="p-3 text-center">
-                                            <span className="px-2 py-1 rounded-full text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                                              Extra
-                                            </span>
-                                          </td>
-                                        </tr>
-                                      ))}
+                                      {form.selectedSubjects?.map(
+                                        (subject, idx) => (
+                                          <tr key={idx}>
+                                            <td className="p-3 font-mono text-indigo-600 dark:text-indigo-400">
+                                              {subject.code}
+                                            </td>
+                                            <td className="p-3 text-slate-900 dark:text-white">
+                                              {subject.name}
+                                            </td>
+                                            <td className="p-3 text-center text-slate-600 dark:text-slate-400">
+                                              {subject.creditHours}
+                                            </td>
+                                            <td className="p-3 text-center">
+                                              <span className="px-2 py-1 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                                Regular
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        ),
+                                      )}
+                                      {form.extraSubjects?.map(
+                                        (subject, idx) => (
+                                          <tr
+                                            key={idx}
+                                            className="bg-amber-50/50 dark:bg-amber-900/10"
+                                          >
+                                            <td className="p-3 font-mono text-amber-600 dark:text-amber-400">
+                                              {subject.code}
+                                            </td>
+                                            <td className="p-3 text-slate-900 dark:text-white">
+                                              {subject.name}
+                                              <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                                                (Extra)
+                                              </span>
+                                            </td>
+                                            <td className="p-3 text-center text-slate-600 dark:text-slate-400">
+                                              {subject.creditHours}
+                                            </td>
+                                            <td className="p-3 text-center">
+                                              <span className="px-2 py-1 rounded-full text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                                                Extra
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        ),
+                                      )}
                                     </tbody>
                                   </table>
                                 </div>
@@ -721,7 +777,7 @@ export default function ManagerDashboard() {
                           </tr>
                         )}
                       </React.Fragment>
-                    )
+                    );
                   })
                 )}
               </tbody>
@@ -732,8 +788,15 @@ export default function ManagerDashboard() {
           {!loading && filteredForms.length > 0 && (
             <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
               <p>
-                Showing <span className="font-medium text-slate-900 dark:text-white">{filteredForms.length}</span> of{" "}
-                <span className="font-medium text-slate-900 dark:text-white">{forms.length}</span> forms
+                Showing{" "}
+                <span className="font-medium text-slate-900 dark:text-white">
+                  {filteredForms.length}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium text-slate-900 dark:text-white">
+                  {forms.length}
+                </span>{" "}
+                forms
               </p>
               <p>Auto-refresh: 30s</p>
             </div>
@@ -774,10 +837,10 @@ export default function ManagerDashboard() {
                   {selectedForm.semester === 1
                     ? "st"
                     : selectedForm.semester === 2
-                    ? "nd"
-                    : selectedForm.semester === 3
-                    ? "rd"
-                    : "th"}{" "}
+                      ? "nd"
+                      : selectedForm.semester === 3
+                        ? "rd"
+                        : "th"}{" "}
                   Semester
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -800,7 +863,9 @@ export default function ManagerDashboard() {
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
                       Father's Name
                     </label>
-                    <p className="text-slate-900 dark:text-white mt-1">{selectedForm.fatherName}</p>
+                    <p className="text-slate-900 dark:text-white mt-1">
+                      {selectedForm.fatherName}
+                    </p>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
@@ -817,14 +882,17 @@ export default function ManagerDashboard() {
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
                       Degree Program
                     </label>
-                    <p className="text-slate-900 dark:text-white mt-1">{selectedForm.degreeName}</p>
+                    <p className="text-slate-900 dark:text-white mt-1">
+                      {selectedForm.degreeName}
+                    </p>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
                       Section & Semester
                     </label>
                     <p className="text-slate-900 dark:text-white mt-1">
-                      Section {selectedForm.section} • Semester {selectedForm.semester}
+                      Section {selectedForm.section} • Semester{" "}
+                      {selectedForm.semester}
                     </p>
                   </div>
                   <div>
@@ -868,7 +936,9 @@ export default function ManagerDashboard() {
                           <td className="p-3 font-mono text-indigo-600 dark:text-indigo-400 font-medium">
                             {subject.code}
                           </td>
-                          <td className="p-3 text-slate-900 dark:text-white">{subject.name}</td>
+                          <td className="p-3 text-slate-900 dark:text-white">
+                            {subject.name}
+                          </td>
                           <td className="p-3 text-center text-slate-600 dark:text-slate-400">
                             {subject.creditHours}
                           </td>
@@ -880,7 +950,10 @@ export default function ManagerDashboard() {
                         </tr>
                       ))}
                       {selectedForm.extraSubjects?.map((subject, idx) => (
-                        <tr key={idx} className="bg-amber-50/50 dark:bg-amber-900/10">
+                        <tr
+                          key={idx}
+                          className="bg-amber-50/50 dark:bg-amber-900/10"
+                        >
                           <td className="p-3 font-mono text-amber-600 dark:text-amber-400 font-medium">
                             {subject.code}
                           </td>
@@ -922,7 +995,9 @@ export default function ManagerDashboard() {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-sm text-amber-600 dark:text-amber-400">Awaiting signature</p>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      Awaiting signature
+                    </p>
                   )}
                 </div>
 
@@ -949,8 +1024,8 @@ export default function ManagerDashboard() {
                 <>
                   <button
                     onClick={() => {
-                      closeModal()
-                      handleRejectForm(selectedForm)
+                      closeModal();
+                      handleRejectForm(selectedForm);
                     }}
                     className="px-6 py-2.5 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl font-medium hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors flex items-center gap-2"
                   >
@@ -959,8 +1034,8 @@ export default function ManagerDashboard() {
                   </button>
                   <button
                     onClick={() => {
-                      closeModal()
-                      handleApproveForm(selectedForm)
+                      closeModal();
+                      handleApproveForm(selectedForm);
                     }}
                     className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30"
                   >
@@ -1091,7 +1166,9 @@ export default function ManagerDashboard() {
                   <AlertCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-rose-900 dark:text-rose-100">Reject Form</h3>
+                  <h3 className="text-lg font-bold text-rose-900 dark:text-rose-100">
+                    Reject Form
+                  </h3>
                   <p className="text-sm text-rose-700 dark:text-rose-300">
                     This action requires a valid reason
                   </p>
@@ -1102,10 +1179,16 @@ export default function ManagerDashboard() {
             <div className="p-6 space-y-4">
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Form: <span className="font-mono font-medium text-slate-900 dark:text-white">{selectedForm.formNumber}</span>
+                  Form:{" "}
+                  <span className="font-mono font-medium text-slate-900 dark:text-white">
+                    {selectedForm.formNumber}
+                  </span>
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                  Student: <span className="font-medium text-slate-900 dark:text-white">{selectedForm.studentName}</span>
+                  Student:{" "}
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {selectedForm.studentName}
+                  </span>
                 </p>
               </div>
 
@@ -1155,5 +1238,5 @@ export default function ManagerDashboard() {
         </div>
       )}
     </div>
-  )
+  );
 }

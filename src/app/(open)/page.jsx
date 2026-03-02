@@ -1,3 +1,4 @@
+"use client";
 import {
   GraduationCap,
   Upload,
@@ -20,15 +21,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Home | UAF Digital Enrollment Portal",
-  description: "Streamlined fee verification and course registration for University of Agriculture Faisalabad students. Submit forms online, track status in real-time, and manage your enrollment efficiently.",
-};
-
-// Since this page uses client-side state and effects, it must be a client component
-"use client";
-
-import { useState, useEffect } from "react";export default function Home() {
+import { useState, useEffect } from "react";
+export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   BookOpen,
   Plus,
@@ -26,24 +26,19 @@ import {
   Calendar,
   Hash,
   Award,
-  Pencil
-} from "lucide-react"
-
-export const metadata = {
-  title: "Manage Degree Schemes & Subjects | Admin Portal - UAF",
-  description: "Create and manage degree schemes with subjects and credit hours.",
-};
+  Pencil,
+} from "lucide-react";
 
 export default function DegreeSchemeManager() {
-  const [schemes, setSchemes] = useState([])
-  const [degrees, setDegrees] = useState([])
-  const [filterDegree, setFilterDegree] = useState("")
-  const [filterSession, setFilterSession] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [viewMode, setViewMode] = useState("grid") // grid or list
+  const [schemes, setSchemes] = useState([]);
+  const [degrees, setDegrees] = useState([]);
+  const [filterDegree, setFilterDegree] = useState("");
+  const [filterSession, setFilterSession] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [viewMode, setViewMode] = useState("grid"); // grid or list
 
   const [form, setForm] = useState({
     degree: "",
@@ -57,150 +52,211 @@ export default function DegreeSchemeManager() {
       subjects: [],
       totalCreditHours: 0,
     })),
-  })
+  });
 
-  const [editingId, setEditingId] = useState(null)
-  const [activeTab, setActiveTab] = useState(1)
-  const [expandedSchemes, setExpandedSchemes] = useState([])
-  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState(null);
+  const [activeTab, setActiveTab] = useState(1);
+  const [expandedSchemes, setExpandedSchemes] = useState([]);
+  const [showForm, setShowForm] = useState(false);
 
   // Credit hour options
   const creditOptions = [
-    { value: "1(1-0)", label: "1(1-0) - Theory", theory: 1, practical: 0, total: 1 },
-    { value: "2(2-0)", label: "2(2-0) - Theory", theory: 2, practical: 0, total: 2 },
-    { value: "3(3-0)", label: "3(3-0) - Theory", theory: 3, practical: 0, total: 3 },
-    { value: "3(2-1)", label: "3(2-1) - Theory + Lab", theory: 2, practical: 1, total: 3 },
-    { value: "4(3-1)", label: "4(3-1) - Theory + Lab", theory: 3, practical: 1, total: 4 },
-    { value: "4(4-0)", label: "4(4-0) - Theory", theory: 4, practical: 0, total: 4 },
-    { value: "0(0-3)", label: "0(0-3) - Lab Only", theory: 0, practical: 3, total: 0 },
-    { value: "5(3-2)", label: "5(3-2) - Theory + Lab", theory: 3, practical: 2, total: 5 },
-    { value: "6(4-2)", label: "6(4-2) - Theory + Lab", theory: 4, practical: 2, total: 6 },
-  ]
+    {
+      value: "1(1-0)",
+      label: "1(1-0) - Theory",
+      theory: 1,
+      practical: 0,
+      total: 1,
+    },
+    {
+      value: "2(2-0)",
+      label: "2(2-0) - Theory",
+      theory: 2,
+      practical: 0,
+      total: 2,
+    },
+    {
+      value: "3(3-0)",
+      label: "3(3-0) - Theory",
+      theory: 3,
+      practical: 0,
+      total: 3,
+    },
+    {
+      value: "3(2-1)",
+      label: "3(2-1) - Theory + Lab",
+      theory: 2,
+      practical: 1,
+      total: 3,
+    },
+    {
+      value: "4(3-1)",
+      label: "4(3-1) - Theory + Lab",
+      theory: 3,
+      practical: 1,
+      total: 4,
+    },
+    {
+      value: "4(4-0)",
+      label: "4(4-0) - Theory",
+      theory: 4,
+      practical: 0,
+      total: 4,
+    },
+    {
+      value: "0(0-3)",
+      label: "0(0-3) - Lab Only",
+      theory: 0,
+      practical: 3,
+      total: 0,
+    },
+    {
+      value: "5(3-2)",
+      label: "5(3-2) - Theory + Lab",
+      theory: 3,
+      practical: 2,
+      total: 5,
+    },
+    {
+      value: "6(4-2)",
+      label: "6(4-2) - Theory + Lab",
+      theory: 4,
+      practical: 2,
+      total: 6,
+    },
+  ];
 
   useEffect(() => {
-    fetchDegrees()
-    fetchSchemes()
-  }, [])
+    fetchDegrees();
+    fetchSchemes();
+  }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(() => fetchSchemes(), 300)
-    return () => clearTimeout(timeout)
-  }, [filterDegree, filterSession])
+    const timeout = setTimeout(() => fetchSchemes(), 300);
+    return () => clearTimeout(timeout);
+  }, [filterDegree, filterSession]);
 
   async function fetchDegrees() {
     try {
-      const res = await fetch("/api/admin/degree")
-      if (!res.ok) throw new Error("Failed to fetch degrees")
-      const data = await res.json()
-      setDegrees(data)
+      const res = await fetch("/api/admin/degree");
+      if (!res.ok) throw new Error("Failed to fetch degrees");
+      const data = await res.json();
+      setDegrees(data);
     } catch (err) {
-      console.error(err)
-      setError("Failed to load degrees")
+      console.error(err);
+      setError("Failed to load degrees");
     }
   }
 
   async function fetchSchemes() {
     try {
-      setLoading(true)
-      let url = "/api/admin/degree-scheme"
-      const params = new URLSearchParams()
+      setLoading(true);
+      let url = "/api/admin/degree-scheme";
+      const params = new URLSearchParams();
 
-      if (filterDegree) params.append("degree", filterDegree)
-      if (filterSession) params.append("session", filterSession)
+      if (filterDegree) params.append("degree", filterDegree);
+      if (filterSession) params.append("session", filterSession);
 
       if (params.toString()) {
-        url += `?${params.toString()}`
+        url += `?${params.toString()}`;
       }
 
-      const res = await fetch(url)
-      if (!res.ok) throw new Error("Failed to fetch schemes")
-      const data = await res.json()
-      setSchemes(data)
-      setError("")
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch schemes");
+      const data = await res.json();
+      setSchemes(data);
+      setError("");
     } catch (err) {
-      console.error(err)
-      setError("Failed to load degree schemes")
+      console.error(err);
+      setError("Failed to load degree schemes");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function saveScheme() {
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
     try {
-      setSaving(true)
+      setSaving(true);
       const url = editingId
         ? `/api/admin/degree-scheme/${editingId}`
-        : "/api/admin/degree-scheme"
+        : "/api/admin/degree-scheme";
 
-      const method = editingId ? "PUT" : "POST"
+      const method = editingId ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || "Failed to save scheme")
+        throw new Error(data.message || "Failed to save scheme");
       }
 
       if (editingId) {
-        setSchemes(schemes.map((s) => (s.id === editingId ? data.scheme : s)))
-        setSuccess("Scheme updated successfully")
+        setSchemes(schemes.map((s) => (s.id === editingId ? data.scheme : s)));
+        setSuccess("Scheme updated successfully");
       } else {
-        setSchemes([...schemes, data.scheme])
-        setSuccess("Scheme created successfully")
+        setSchemes([...schemes, data.scheme]);
+        setSuccess("Scheme created successfully");
       }
 
       setTimeout(() => {
-        resetForm()
-        setShowForm(false)
-        setSuccess("")
-      }, 1500)
+        resetForm();
+        setShowForm(false);
+        setSuccess("");
+      }, 1500);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   async function deleteScheme(id) {
-    if (!confirm("Are you sure you want to delete this scheme? This action cannot be undone.")) return
+    if (
+      !confirm(
+        "Are you sure you want to delete this scheme? This action cannot be undone.",
+      )
+    )
+      return;
 
     try {
-      const res = await fetch(`/api/admin/degree-scheme/${id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed to delete scheme")
+      const res = await fetch(`/api/admin/degree-scheme/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete scheme");
 
-      setSchemes(schemes.filter((s) => s.id !== id))
-      setSuccess("Scheme deleted successfully")
-      setTimeout(() => setSuccess(""), 3000)
+      setSchemes(schemes.filter((s) => s.id !== id));
+      setSuccess("Scheme deleted successfully");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     }
   }
 
   function validateForm() {
     if (!form.degree) {
-      setError("Please select a degree")
-      return false
+      setError("Please select a degree");
+      return false;
     }
     if (!form.schemeName.trim()) {
-      setError("Scheme name is required")
-      return false
+      setError("Scheme name is required");
+      return false;
     }
     if (!form.session.trim()) {
-      setError("Session is required (e.g., 2022-2026)")
-      return false
+      setError("Session is required (e.g., 2022-2026)");
+      return false;
     }
-    setError("")
-    return true
+    setError("");
+    return true;
   }
 
   function startEdit(scheme) {
-    setEditingId(scheme.id)
+    setEditingId(scheme.id);
     setForm({
       degree: scheme.degreeId,
       schemeName: scheme.schemeName,
@@ -217,11 +273,11 @@ export default function DegreeSchemeManager() {
         })),
         totalCreditHours: sem.totalCreditHours,
       })),
-    })
+    });
 
-    setActiveTab(1)
-    setShowForm(true)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    setActiveTab(1);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function resetForm() {
@@ -237,117 +293,134 @@ export default function DegreeSchemeManager() {
         subjects: [],
         totalCreditHours: 0,
       })),
-    })
-    setEditingId(null)
-    setActiveTab(1)
-    setError("")
+    });
+    setEditingId(null);
+    setActiveTab(1);
+    setError("");
   }
 
   function addSubjectToSemester(semester) {
-    const updatedSemesters = [...form.semesterSchemes]
-    const semesterIndex = updatedSemesters.findIndex((s) => s.semester === semester)
+    const updatedSemesters = [...form.semesterSchemes];
+    const semesterIndex = updatedSemesters.findIndex(
+      (s) => s.semester === semester,
+    );
 
     if (semesterIndex !== -1) {
       updatedSemesters[semesterIndex].subjects.push({
         code: "",
         name: "",
         creditHours: "3(2-1)",
-      })
+      });
 
       // Recalculate credits
-      updatedSemesters[semesterIndex].totalCreditHours = calculateSemesterCredits(
-        updatedSemesters[semesterIndex].subjects
-      )
+      updatedSemesters[semesterIndex].totalCreditHours =
+        calculateSemesterCredits(updatedSemesters[semesterIndex].subjects);
 
-      setForm({ ...form, semesterSchemes: updatedSemesters })
+      setForm({ ...form, semesterSchemes: updatedSemesters });
     }
   }
 
   function removeSubjectFromSemester(semester, subjectIndex) {
-    const updatedSemesters = [...form.semesterSchemes]
-    const semesterIndex = updatedSemesters.findIndex((s) => s.semester === semester)
+    const updatedSemesters = [...form.semesterSchemes];
+    const semesterIndex = updatedSemesters.findIndex(
+      (s) => s.semester === semester,
+    );
 
     if (semesterIndex !== -1) {
-      updatedSemesters[semesterIndex].subjects.splice(subjectIndex, 1)
-      updatedSemesters[semesterIndex].totalCreditHours = calculateSemesterCredits(
-        updatedSemesters[semesterIndex].subjects
-      )
-      setForm({ ...form, semesterSchemes: updatedSemesters })
+      updatedSemesters[semesterIndex].subjects.splice(subjectIndex, 1);
+      updatedSemesters[semesterIndex].totalCreditHours =
+        calculateSemesterCredits(updatedSemesters[semesterIndex].subjects);
+      setForm({ ...form, semesterSchemes: updatedSemesters });
     }
   }
 
   function updateSubject(semester, subjectIndex, field, value) {
-    const updatedSemesters = [...form.semesterSchemes]
-    const semesterIndex = updatedSemesters.findIndex((s) => s.semester === semester)
+    const updatedSemesters = [...form.semesterSchemes];
+    const semesterIndex = updatedSemesters.findIndex(
+      (s) => s.semester === semester,
+    );
 
     if (semesterIndex !== -1) {
-      updatedSemesters[semesterIndex].subjects[subjectIndex][field] = value
+      updatedSemesters[semesterIndex].subjects[subjectIndex][field] = value;
 
       // Recalculate credits if credit hours changed
       if (field === "creditHours") {
-        updatedSemesters[semesterIndex].totalCreditHours = calculateSemesterCredits(
-          updatedSemesters[semesterIndex].subjects
-        )
+        updatedSemesters[semesterIndex].totalCreditHours =
+          calculateSemesterCredits(updatedSemesters[semesterIndex].subjects);
       }
 
-      setForm({ ...form, semesterSchemes: updatedSemesters })
+      setForm({ ...form, semesterSchemes: updatedSemesters });
     }
   }
 
   function calculateSemesterCredits(subjects) {
     return subjects.reduce((sum, sub) => {
-      const match = sub.creditHours.match(/^(\d+)\(/)
-      return sum + (match ? parseInt(match[1]) : 0)
-    }, 0)
+      const match = sub.creditHours.match(/^(\d+)\(/);
+      return sum + (match ? parseInt(match[1]) : 0);
+    }, 0);
   }
 
   function toggleSchemeExpansion(schemeId) {
     setExpandedSchemes((prev) =>
-      prev.includes(schemeId) ? prev.filter((id) => id !== schemeId) : [...prev, schemeId]
-    )
+      prev.includes(schemeId)
+        ? prev.filter((id) => id !== schemeId)
+        : [...prev, schemeId],
+    );
   }
 
   function getDegreeName(degreeId) {
-    return degrees.find((d) => d.id === degreeId)?.name || "Unknown Degree"
+    return degrees.find((d) => d.id === degreeId)?.name || "Unknown Degree";
   }
 
   function getTotalSchemeCredits(scheme) {
-    return scheme.semesterSchemes.reduce((sum, sem) => sum + sem.totalCreditHours, 0)
+    return scheme.semesterSchemes.reduce(
+      (sum, sem) => sum + sem.totalCreditHours,
+      0,
+    );
   }
 
   // Calculate stats
   const stats = {
     totalSchemes: schemes.length,
     totalSubjects: schemes.reduce(
-      (acc, s) => acc + s.semesterSchemes.reduce((semAcc, sem) => semAcc + sem.subjects.length, 0),
-      0
+      (acc, s) =>
+        acc +
+        s.semesterSchemes.reduce(
+          (semAcc, sem) => semAcc + sem.subjects.length,
+          0,
+        ),
+      0,
     ),
     avgSubjectsPerScheme: schemes.length
       ? Math.round(
           schemes.reduce(
             (acc, s) =>
-              acc + s.semesterSchemes.reduce((semAcc, sem) => semAcc + sem.subjects.length, 0),
-            0
-          ) / schemes.length
+              acc +
+              s.semesterSchemes.reduce(
+                (semAcc, sem) => semAcc + sem.subjects.length,
+                0,
+              ),
+            0,
+          ) / schemes.length,
         )
       : 0,
     activeSchemes: schemes.filter((s) => s.active !== false).length,
-  }
+  };
 
   const filteredSchemes = schemes.filter((s) => {
-    const matchesDegree = filterDegree ? s.degreeId === filterDegree : true
+    const matchesDegree = filterDegree ? s.degreeId === filterDegree : true;
     const matchesSession = filterSession
       ? s.session.toLowerCase().includes(filterSession.toLowerCase())
-      : true
-    return matchesDegree && matchesSession
-  })
+      : true;
+    return matchesDegree && matchesSession;
+  });
 
   if (loading && !schemes.length) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
       </div>
-    )
+    );
   }
 
   return (
@@ -365,8 +438,8 @@ export default function DegreeSchemeManager() {
         <div className="flex gap-3">
           <button
             onClick={() => {
-              resetForm()
-              setShowForm(!showForm)
+              resetForm();
+              setShowForm(!showForm);
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
               showForm
@@ -374,7 +447,11 @@ export default function DegreeSchemeManager() {
                 : "bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 dark:shadow-violet-900/30"
             }`}
           >
-            {showForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            {showForm ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Plus className="w-5 h-5" />
+            )}
             {showForm ? "Close Form" : "Create Scheme"}
           </button>
         </div>
@@ -404,22 +481,50 @@ export default function DegreeSchemeManager() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Schemes", value: stats.totalSchemes, icon: BookOpen, color: "violet" },
-          { label: "Total Subjects", value: stats.totalSubjects, icon: Layers, color: "blue" },
-          { label: "Avg/Scheme", value: stats.avgSubjectsPerScheme, icon: Award, color: "amber" },
-          { label: "Active Schemes", value: stats.activeSchemes, icon: CheckCircle2, color: "emerald" },
+          {
+            label: "Total Schemes",
+            value: stats.totalSchemes,
+            icon: BookOpen,
+            color: "violet",
+          },
+          {
+            label: "Total Subjects",
+            value: stats.totalSubjects,
+            icon: Layers,
+            color: "blue",
+          },
+          {
+            label: "Avg/Scheme",
+            value: stats.avgSubjectsPerScheme,
+            icon: Award,
+            color: "amber",
+          },
+          {
+            label: "Active Schemes",
+            value: stats.activeSchemes,
+            icon: CheckCircle2,
+            color: "emerald",
+          },
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
             className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <div className={`p-2.5 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl`}>
-                <Icon className={`w-5 h-5 text-${color}-600 dark:text-${color}-400`} />
+              <div
+                className={`p-2.5 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl`}
+              >
+                <Icon
+                  className={`w-5 h-5 text-${color}-600 dark:text-${color}-400`}
+                />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {value}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                  {label}
+                </p>
               </div>
             </div>
           </div>
@@ -465,7 +570,9 @@ export default function DegreeSchemeManager() {
                   type="text"
                   placeholder="e.g., BS CS 2022 Scheme"
                   value={form.schemeName}
-                  onChange={(e) => setForm({ ...form, schemeName: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, schemeName: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
                 />
               </div>
@@ -478,7 +585,9 @@ export default function DegreeSchemeManager() {
                   type="text"
                   placeholder="e.g., 2022-2026"
                   value={form.session}
-                  onChange={(e) => setForm({ ...form, session: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, session: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
                 />
               </div>
@@ -490,16 +599,20 @@ export default function DegreeSchemeManager() {
                 <select
                   value={form.totalSemesters}
                   onChange={(e) => {
-                    const total = parseInt(e.target.value)
+                    const total = parseInt(e.target.value);
                     setForm({
                       ...form,
                       totalSemesters: total,
-                      semesterSchemes: Array.from({ length: total }, (_, i) => ({
-                        semester: i + 1,
-                        subjects: form.semesterSchemes[i]?.subjects || [],
-                        totalCreditHours: form.semesterSchemes[i]?.totalCreditHours || 0,
-                      })),
-                    })
+                      semesterSchemes: Array.from(
+                        { length: total },
+                        (_, i) => ({
+                          semester: i + 1,
+                          subjects: form.semesterSchemes[i]?.subjects || [],
+                          totalCreditHours:
+                            form.semesterSchemes[i]?.totalCreditHours || 0,
+                        }),
+                      ),
+                    });
                   }}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
                 >
@@ -520,7 +633,9 @@ export default function DegreeSchemeManager() {
                 rows={2}
                 placeholder="Optional description..."
                 value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all resize-none"
               />
             </div>
@@ -528,7 +643,10 @@ export default function DegreeSchemeManager() {
             {/* Semester Tabs */}
             <div className="border-b border-slate-200 dark:border-slate-800">
               <div className="flex overflow-x-auto scrollbar-hide gap-1">
-                {Array.from({ length: form.totalSemesters }, (_, i) => i + 1).map((sem) => (
+                {Array.from(
+                  { length: form.totalSemesters },
+                  (_, i) => i + 1,
+                ).map((sem) => (
                   <button
                     key={sem}
                     onClick={() => setActiveTab(sem)}
@@ -551,14 +669,18 @@ export default function DegreeSchemeManager() {
             {form.semesterSchemes
               .filter((sem) => sem.semester === activeTab)
               .map((semester) => (
-                <div key={semester.semester} className="space-y-4 animate-in fade-in duration-200">
+                <div
+                  key={semester.semester}
+                  className="space-y-4 animate-in fade-in duration-200"
+                >
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                         Semester {semester.semester} Curriculum
                       </h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {semester.subjects.length} subjects • {semester.totalCreditHours} total credits
+                        {semester.subjects.length} subjects •{" "}
+                        {semester.totalCreditHours} total credits
                       </p>
                     </div>
                     <button
@@ -606,8 +728,8 @@ export default function DegreeSchemeManager() {
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                             {semester.subjects.map((subject, idx) => {
                               const creditInfo = creditOptions.find(
-                                (c) => c.value === subject.creditHours
-                              ) || { theory: 0, practical: 0 }
+                                (c) => c.value === subject.creditHours,
+                              ) || { theory: 0, practical: 0 };
 
                               return (
                                 <tr
@@ -620,7 +742,12 @@ export default function DegreeSchemeManager() {
                                       placeholder="CS-101"
                                       value={subject.code}
                                       onChange={(e) =>
-                                        updateSubject(semester.semester, idx, "code", e.target.value)
+                                        updateSubject(
+                                          semester.semester,
+                                          idx,
+                                          "code",
+                                          e.target.value,
+                                        )
                                       }
                                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                                     />
@@ -631,7 +758,12 @@ export default function DegreeSchemeManager() {
                                       placeholder="Subject Name"
                                       value={subject.name}
                                       onChange={(e) =>
-                                        updateSubject(semester.semester, idx, "name", e.target.value)
+                                        updateSubject(
+                                          semester.semester,
+                                          idx,
+                                          "name",
+                                          e.target.value,
+                                        )
                                       }
                                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                                     />
@@ -644,13 +776,16 @@ export default function DegreeSchemeManager() {
                                           semester.semester,
                                           idx,
                                           "creditHours",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
                                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                                     >
                                       {creditOptions.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
+                                        <option
+                                          key={opt.value}
+                                          value={opt.value}
+                                        >
                                           {opt.label}
                                         </option>
                                       ))}
@@ -669,7 +804,10 @@ export default function DegreeSchemeManager() {
                                   <td className="p-4 text-center">
                                     <button
                                       onClick={() =>
-                                        removeSubjectFromSemester(semester.semester, idx)
+                                        removeSubjectFromSemester(
+                                          semester.semester,
+                                          idx,
+                                        )
                                       }
                                       className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
                                     >
@@ -677,7 +815,7 @@ export default function DegreeSchemeManager() {
                                     </button>
                                   </td>
                                 </tr>
-                              )
+                              );
                             })}
                           </tbody>
                         </table>
@@ -694,7 +832,9 @@ export default function DegreeSchemeManager() {
                   type="checkbox"
                   id="active"
                   checked={form.active}
-                  onChange={(e) => setForm({ ...form, active: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, active: e.target.checked })
+                  }
                   className="w-5 h-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
                 />
                 <label
@@ -708,8 +848,8 @@ export default function DegreeSchemeManager() {
                 <button
                   type="button"
                   onClick={() => {
-                    resetForm()
-                    setShowForm(false)
+                    resetForm();
+                    setShowForm(false);
                   }}
                   className="px-6 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
@@ -851,19 +991,28 @@ export default function DegreeSchemeManager() {
                     <p className="text-lg font-bold text-slate-900 dark:text-white">
                       {scheme.totalSemesters}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Semesters</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Semesters
+                    </p>
                   </div>
                   <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                     <p className="text-lg font-bold text-slate-900 dark:text-white">
-                      {scheme.semesterSchemes.reduce((acc, s) => acc + s.subjects.length, 0)}
+                      {scheme.semesterSchemes.reduce(
+                        (acc, s) => acc + s.subjects.length,
+                        0,
+                      )}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Subjects</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Subjects
+                    </p>
                   </div>
                   <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                     <p className="text-lg font-bold text-slate-900 dark:text-white">
                       {getTotalSchemeCredits(scheme)}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Credits</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Credits
+                    </p>
                   </div>
                 </div>
 
@@ -901,13 +1050,17 @@ export default function DegreeSchemeManager() {
                 {expandedSchemes.includes(scheme.id) && (
                   <div className="px-6 pb-6 space-y-4 animate-in slide-in-from-top-2">
                     {scheme.semesterSchemes.map((sem) => (
-                      <div key={sem.semester} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
+                      <div
+                        key={sem.semester}
+                        className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4"
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-semibold text-slate-900 dark:text-white text-sm">
                             Semester {sem.semester}
                           </h4>
                           <span className="text-xs text-slate-500 dark:text-slate-400">
-                            {sem.totalCreditHours} credits • {sem.subjects.length} subjects
+                            {sem.totalCreditHours} credits •{" "}
+                            {sem.subjects.length} subjects
                           </span>
                         </div>
                         {sem.subjects.length > 0 ? (
@@ -991,10 +1144,15 @@ export default function DegreeSchemeManager() {
                     <td className="p-4 text-slate-600 dark:text-slate-400">
                       {getDegreeName(scheme.degreeId)}
                     </td>
-                    <td className="p-4 text-slate-600 dark:text-slate-400">{scheme.session}</td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {scheme.session}
+                    </td>
                     <td className="p-4 text-center">
                       <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
-                        {scheme.semesterSchemes.reduce((acc, s) => acc + s.subjects.length, 0)}
+                        {scheme.semesterSchemes.reduce(
+                          (acc, s) => acc + s.subjects.length,
+                          0,
+                        )}
                       </span>
                     </td>
                     <td className="p-4 text-center text-slate-600 dark:text-slate-400">
@@ -1059,5 +1217,5 @@ export default function DegreeSchemeManager() {
         </div>
       )}
     </div>
-  )
+  );
 }

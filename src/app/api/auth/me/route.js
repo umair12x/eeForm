@@ -5,6 +5,8 @@ import User from "@/models/User";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req) {
   await connectDB();
 

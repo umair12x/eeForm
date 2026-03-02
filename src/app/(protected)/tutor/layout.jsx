@@ -1,8 +1,7 @@
 export const metadata = {
-  title: "Tutor Portal | UAF Digital Enrollment Portal",
-  description: "Tutor access to manage student enrollment forms.",
+  title: "Tutor Dashboard | UAF Digital Enrollment Portal",
+  description: "Manage and verify student enrollment forms. Sign approved forms and manage rejections.",
 };
-
 export default function tutorLayout({ children }) {
  
   return (

@@ -1,139 +1,137 @@
-// app/admin/departments/page.jsx - Enhanced Departments
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { 
-  Building2, 
-  Plus, 
-  Pencil, 
-  Trash2, 
+import { useState, useEffect } from "react";
+import {
+  Building2,
+  Plus,
+  Pencil,
+  Trash2,
   GraduationCap,
   Users,
-  MoreVertical,
   Search,
   X,
-  CheckCircle2,
-  AlertCircle
-} from "lucide-react"
-
-export const metadata = {
-  title: "Manage Departments | Admin Portal - UAF",
-  description: "Create, edit, and manage academic departments.",
-};
+} from "lucide-react";
 
 export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState([])
-  const [degrees, setDegrees] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [showModal, setShowModal] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  
+  const [departments, setDepartments] = useState([]);
+  const [degrees, setDegrees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
   const [form, setForm] = useState({
     name: "",
     code: "",
     description: "",
-    head: ""
-  })
+    head: "",
+  });
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   async function fetchData() {
     try {
       const [deptsRes, degreesRes] = await Promise.all([
         fetch("/api/admin/department"),
-        fetch("/api/admin/degree")
-      ])
-      
-      const deptsData = await deptsRes.json()
-      const degreesData = await degreesRes.json()
-      
+        fetch("/api/admin/degree"),
+      ]);
+
+      const deptsData = await deptsRes.json();
+      const degreesData = await degreesRes.json();
+
       // Calculate degree counts
-      const deptsWithCounts = deptsData.map(dept => ({
+      const deptsWithCounts = deptsData.map((dept) => ({
         ...dept,
-        degreeCount: degreesData.filter(d => d.department === dept.id).length
-      }))
-      
-      setDepartments(deptsWithCounts)
-      setDegrees(degreesData)
+        degreeCount: degreesData.filter((d) => d.department === dept.id).length,
+      }));
+
+      setDepartments(deptsWithCounts);
+      setDegrees(degreesData);
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     try {
-      const url = editingId ? `/api/admin/department/${editingId}` : "/api/admin/department"
-      const method = editingId ? "PUT" : "POST"
-      
+      const url = editingId
+        ? `/api/admin/department/${editingId}`
+        : "/api/admin/department";
+      const method = editingId ? "PUT" : "POST";
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
-      })
-      
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message)
-      
-      fetchData() // Refresh to get updated counts
-      resetForm()
-      setShowModal(false)
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      fetchData(); // Refresh to get updated counts
+      resetForm();
+      setShowModal(false);
     } catch (err) {
-      alert(err.message)
+      alert(err.message);
     }
   }
 
   async function handleDelete(id) {
-    const dept = departments.find(d => d.id === id)
+    const dept = departments.find((d) => d.id === id);
     if (dept.degreeCount > 0) {
-      alert(`Cannot delete ${dept.name}. It has ${dept.degreeCount} degree programs assigned.`)
-      return
+      alert(
+        `Cannot delete ${dept.name}. It has ${dept.degreeCount} degree programs assigned.`,
+      );
+      return;
     }
-    
-    if (!confirm("Are you sure you want to delete this department?")) return
-    
+
+    if (!confirm("Are you sure you want to delete this department?")) return;
+
     try {
-      const res = await fetch(`/api/admin/department/${id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed to delete")
-      setDepartments(departments.filter(d => d.id !== id))
+      const res = await fetch(`/api/admin/department/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      setDepartments(departments.filter((d) => d.id !== id));
     } catch (err) {
-      alert(err.message)
+      alert(err.message);
     }
   }
 
   function startEdit(dept) {
-    setEditingId(dept.id)
+    setEditingId(dept.id);
     setForm({
       name: dept.name,
       code: dept.code || "",
       description: dept.description || "",
-      head: dept.head || ""
-    })
-    setShowModal(true)
+      head: dept.head || "",
+    });
+    setShowModal(true);
   }
 
   function resetForm() {
-    setForm({ name: "", code: "", description: "", head: "" })
-    setEditingId(null)
+    setForm({ name: "", code: "", description: "", head: "" });
+    setEditingId(null);
   }
 
-  const filteredDepts = departments.filter(d => 
-    d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredDepts = departments.filter(
+    (d) =>
+      d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.code?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
       </div>
-    )
+    );
   }
 
   return (
@@ -141,15 +139,17 @@ export default function DepartmentsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Departments</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Departments
+          </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
             Manage academic departments and their structure
           </p>
         </div>
         <button
           onClick={() => {
-            resetForm()
-            setShowModal(true)
+            resetForm();
+            setShowModal(true);
           }}
           className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-violet-200 dark:shadow-violet-900/30"
         >
@@ -173,8 +173,8 @@ export default function DepartmentsPage() {
       {/* Departments Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDepts.map((dept) => (
-          <div 
-            key={dept.id} 
+          <div
+            key={dept.id}
             className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
             <div className="flex items-start justify-between mb-4">
@@ -197,11 +197,15 @@ export default function DepartmentsPage() {
               </div>
             </div>
 
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{dept.name}</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+              {dept.name}
+            </h3>
             {dept.code && (
-              <p className="text-sm font-mono text-slate-500 dark:text-slate-400 mb-3">{dept.code}</p>
+              <p className="text-sm font-mono text-slate-500 dark:text-slate-400 mb-3">
+                {dept.code}
+              </p>
             )}
-            
+
             <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <GraduationCap className="w-4 h-4" />
@@ -222,9 +226,13 @@ export default function DepartmentsPage() {
       {filteredDepts.length === 0 && (
         <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 border-dashed">
           <Building2 className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No departments found</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            No departments found
+          </h3>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
-            {searchTerm ? "Try adjusting your search" : "Get started by adding your first department"}
+            {searchTerm
+              ? "Try adjusting your search"
+              : "Get started by adding your first department"}
           </p>
         </div>
       )}
@@ -237,37 +245,46 @@ export default function DepartmentsPage() {
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                 {editingId ? "Edit Department" : "Add Department"}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+              >
                 <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Department Name *</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Department Name *
+                </label>
                 <input
                   value={form.name}
-                  onChange={(e) => setForm({...form, name: e.target.value})}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Department Code</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Department Code
+                </label>
                 <input
                   value={form.code}
-                  onChange={(e) => setForm({...form, code: e.target.value})}
+                  onChange={(e) => setForm({ ...form, code: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
                   placeholder="e.g., CS"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Department Head</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Department Head
+                </label>
                 <input
                   value={form.head}
-                  onChange={(e) => setForm({...form, head: e.target.value})}
+                  onChange={(e) => setForm({ ...form, head: e.target.value })}
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500"
                   placeholder="e.g., Dr. John Smith"
                 />
@@ -293,5 +310,5 @@ export default function DepartmentsPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

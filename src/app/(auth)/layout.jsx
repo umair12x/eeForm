@@ -1,5 +1,6 @@
 export const metadata = {
-  title: "Authentication | UAF Digital Enrollment Portal",
+  title: "Login & Registration",
+  description: "Authentication pages for UAF Digital Enrollment Portal - log in or create an account to manage your enrollment and fees.",
 };
 
 export default function AuthLayout({ children }) {

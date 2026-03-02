@@ -1,4 +1,3 @@
-// app/admin/create-user/page.jsx - Enhanced User Creation
 "use client"
 
 import { useState, useEffect } from "react"
@@ -20,10 +19,7 @@ import {
   CreditCard
 } from "lucide-react"
 
-export const metadata = {
-  title: "Create New User | Admin Portal - UAF",
-  description: "Create new user accounts with appropriate roles and permissions.",
-};
+
 
 const initialStudent = {
   name: "",

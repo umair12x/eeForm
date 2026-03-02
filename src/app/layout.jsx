@@ -5,7 +5,10 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   metadataBase: new URL("https://eeform.uaf.edu.pk"),
-  title: "UAF Digital Enrollment Portal | Online Fee Verification & Course Registration",
+  title:{
+    default: "UAF Digital Enrollment Portal | Online Fee Verification & Course Registration",
+    template: "%s | UAF Digital Enrollment Portal"
+  },
   description: "University of Agriculture Faisalabad - Digital Enrollment Portal for UG and PG programs with fee verification, form submission, and course registration.",
   keywords: [
     "university enrollment",

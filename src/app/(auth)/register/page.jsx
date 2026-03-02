@@ -25,10 +25,7 @@ import {
 } from "lucide-react"
 import ThemeToggle from "@/components/layout/ThemeToggle"
 
-export const metadata = {
-  title: "Register | UAF Digital Enrollment Portal",
-  description: "Create a new account to access University of Agriculture Faisalabad's enrollment system.",
-};
+
 
 const ROLES = [
   {
