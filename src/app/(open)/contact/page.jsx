@@ -182,8 +182,8 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="relative">
-                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                     Your Name <span className="text-rose-500">*</span>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Your Name <span className="text-rose-500">*</span>
                     </label>
                     <Input
                       name="name"
@@ -192,7 +192,6 @@ export default function ContactPage() {
                       onFocus={() => setFocusedField("name")}
                       onBlur={() => setFocusedField(null)}
                       required
-                      labelClassName="text-slate-700 dark:text-slate-300"
                       className={`transition-all duration-200 ${
                         focusedField === "name" ? "ring-2 ring-blue-500/20" : ""
                       }`}
@@ -211,7 +210,6 @@ export default function ContactPage() {
                       onFocus={() => setFocusedField("email")}
                       onBlur={() => setFocusedField(null)}
                       required
-                      labelClassName="text-slate-700 dark:text-slate-300"
                       className={`transition-all duration-200 ${
                         focusedField === "email"
                           ? "ring-2 ring-blue-500/20"
@@ -232,7 +230,6 @@ export default function ContactPage() {
                     onFocus={() => setFocusedField("subject")}
                     onBlur={() => setFocusedField(null)}
                     required
-                    labelClassName="text-slate-700 dark:text-slate-300"
                     className={`transition-all duration-200 ${
                       focusedField === "subject"
                         ? "ring-2 ring-blue-500/20"
