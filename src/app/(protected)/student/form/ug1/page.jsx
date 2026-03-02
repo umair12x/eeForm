@@ -3,6 +3,11 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import axios from "axios";
 
+export const metadata = {
+  title: "Undergraduate Enrollment Form | Student Portal - UAF",
+  description: "Fill out and submit your undergraduate enrollment form.",
+};
+
 function UgForm() {
   const [departments, setDepartments] = useState([]);
   const [degrees, setDegrees] = useState([]);

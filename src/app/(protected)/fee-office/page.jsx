@@ -34,6 +34,11 @@ function useAutoRefresh(callback, interval = 30000) {
   }, [callback, interval])
 }
 
+export const metadata = {
+  title: "Fee Office Dashboard | UAF Digital Enrollment Portal",
+  description: "Verify student fee payments and manage verification documents.",
+};
+
 export default function FeeSectionDashboard() {
   const [search, setSearch] = useState("")
   const [verifications, setVerifications] = useState([])

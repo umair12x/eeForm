@@ -16,6 +16,11 @@ import {
   AlertCircle
 } from "lucide-react"
 
+export const metadata = {
+  title: "Manage Departments | Admin Portal - UAF",
+  description: "Create, edit, and manage academic departments.",
+};
+
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState([])
   const [degrees, setDegrees] = useState([])

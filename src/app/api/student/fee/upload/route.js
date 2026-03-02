@@ -10,7 +10,6 @@ export async function POST(req) {
   await connectDB();
   
   try {
-    console.log("=== FEE VERIFICATION REQUEST START ===");
     const formData = await req.formData();
     
         // Get authenticated user registration number for security check
@@ -28,7 +27,7 @@ export async function POST(req) {
               currentUserRegNumber = user.registrationNumber;
             }
           } catch (err) {
-            console.log("Could not decode token, proceeding without auth check");
+            // Token decode failed, continue without auth check
           }
         }
     
@@ -81,8 +80,6 @@ export async function POST(req) {
       contactNumber,
       remarks,
     };
-    
-    console.log("Data to be saved:", data);
 
     // Validate required fields
     const requiredFields = [
@@ -188,8 +185,6 @@ export async function POST(req) {
         voucherImageUrl = result.secure_url;
         voucherPublicId = result.public_id;
 
-        console.log("✓ Uploaded voucher to Cloudinary:", voucherImageUrl);
-
       } catch (uploadError) {
         console.error("✗ Cloudinary upload failed:", uploadError);
         return NextResponse.json(
@@ -228,9 +223,6 @@ export async function POST(req) {
     });
 
     await verification.save();
-    
-    console.log("✓ Form saved to database with ID:", verification._id);
-    console.log("=== FEE VERIFICATION REQUEST COMPLETE ===");
 
     return NextResponse.json({
       success: true,
@@ -247,7 +239,6 @@ export async function POST(req) {
     });
     
   } catch (error) {
-    console.error("✗ Server error:", error);
     return NextResponse.json(
       { 
         error: error.message || "Internal server error",

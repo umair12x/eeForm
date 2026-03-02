@@ -25,6 +25,11 @@ import {
 } from "lucide-react"
 import ThemeToggle from "@/components/layout/ThemeToggle"
 
+export const metadata = {
+  title: "Login | UAF Digital Enrollment Portal",
+  description: "Log in to your University of Agriculture Faisalabad student portal to manage enrollment and fees.",
+};
+
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()

@@ -27,6 +27,11 @@ const faculties = [
   "Faculty of Veterinary Sciences",
 ];
 
+export const metadata = {
+  title: "Graduate Student GS-10 Form | Student Portal - UAF",
+  description: "Fill out and submit your graduate student GS-10 enrollment form.",
+};
+
 function PostGraduateForm() {
   // Initial form data
   const initialFormData = {

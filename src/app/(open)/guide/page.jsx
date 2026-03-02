@@ -19,6 +19,11 @@ import {
 import Card, { CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 
+export const metadata = {
+  title: "User Guide | UAF Digital Enrollment Portal",
+  description: "Complete guide for students, tutors, managers, and administrators on using the enrollment portal.",
+};
+
 export default function GuidePage() {
   const [activeTab, setActiveTab] = useState('student');
   const [completedSteps, setCompletedSteps] = useState({});

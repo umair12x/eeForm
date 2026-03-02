@@ -11,7 +11,6 @@ export async function POST(req) {
   await connectDB();
   
   try {
-    console.log("=== FEE VERIFICATION REQUEST START ===");
     const formData = await req.formData();
     
     // Get authenticated user
@@ -23,7 +22,7 @@ export async function POST(req) {
         const decoded = jwt.verify(token, JWT_SECRET);
         currentUser = await User.findById(decoded.id).select("registrationNumber name email");
       } catch (err) {
-        console.log("Could not decode token, proceeding without auth");
+        // Token decode failed, continue without auth
       }
     }
     

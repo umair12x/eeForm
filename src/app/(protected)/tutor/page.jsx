@@ -36,6 +36,11 @@ function useAutoRefresh(callback, delay = 30000) {
   }, [callback, delay])
 }
 
+export const metadata = {
+  title: "Tutor Dashboard | UAF Digital Enrollment Portal",
+  description: "Manage and verify student enrollment forms. Sign approved forms and manage rejections.",
+};
+
 export default function TutorDashboard() {
   const [forms, setForms] = useState([])
   const [filteredForms, setFilteredForms] = useState([])

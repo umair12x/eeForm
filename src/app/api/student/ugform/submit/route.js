@@ -10,19 +10,6 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
-    // Log received data for debugging
-    console.log("=== FORM SUBMISSION START ===");
-    console.log("Received form data:", JSON.stringify(body, null, 2));
-    
-    // Specifically check tutor data
-    console.log("TUTOR DATA RECEIVED:", {
-      tutorName: body.tutorName,
-      tutorEmail: body.tutorEmail,
-      tutorId: body.tutorId,
-      typeOfTutorName: typeof body.tutorName,
-      typeOfTutorEmail: typeof body.tutorEmail
-    });
-
     // Validate required fields one by one with proper checks
     const requiredFields = [
       { field: "departmentId", message: "Department is required" },
@@ -40,9 +27,7 @@ export async function POST(req) {
 
     for (const { field, message } of requiredFields) {
       const value = body[field];
-      console.log(`Checking field ${field}:`, value);
       if (value === undefined || value === null || value === "") {
-        console.log(`Field ${field} failed validation`);
         return NextResponse.json(
           {
             success: false,
@@ -53,53 +38,7 @@ export async function POST(req) {
       }
     }
 
-    console.log("All required fields validated successfully");
-
-    // Validate selected subjects
-    if (!body.selectedSubjects || body.selectedSubjects.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Please select at least one subject",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate total credits
-    if (body.totalCredits === undefined || body.totalCredits === null) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Total credits calculation failed",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate credit hours range
-    if (body.totalCredits > 24) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Total credit hours cannot exceed 24",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (body.totalCredits < 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Please select at least one subject",
-        },
-        { status: 400 }
-      );
-    }
-
     // CHECK FOR DUPLICATE FORM
-    console.log("Checking for existing form with same registration number and semester...");
     const existingForm = await UgForm.findOne({
       registeredNo: body.registeredNo,
       semester: parseInt(body.semester),
@@ -111,7 +50,6 @@ export async function POST(req) {
     });
 
     if (existingForm) {
-      console.log("Duplicate form found:", existingForm._id);
       return NextResponse.json(
         {
           success: false,
@@ -122,10 +60,8 @@ export async function POST(req) {
         { status: 409 }
       );
     }
-    console.log("No duplicate form found, proceeding...");
 
     // Fetch department and degree details
-    console.log("Fetching department and degree...");
     const [department, degree] = await Promise.all([
       Department.findById(body.departmentId),
       Degree.findById(body.degreeId),
@@ -151,9 +87,6 @@ export async function POST(req) {
       );
     }
 
-    console.log("Department found:", department.name);
-    console.log("Degree found:", degree.name);
-
     // Fetch degree scheme for the selected session (optional)
     let scheme = null;
     try {
@@ -162,9 +95,7 @@ export async function POST(req) {
         session: body.session,
         isActive: true,
       }).sort({ createdAt: -1 });
-      console.log("Scheme found:", scheme?.schemeName);
     } catch (error) {
-      console.warn("Error fetching degree scheme:", error);
       // Continue without scheme if not found
     }
 
@@ -260,12 +191,7 @@ export async function POST(req) {
       ugForm.formNumber = `UG1-${year}-${(count + 1)
         .toString()
         .padStart(5, "0")}`;
-      console.log("Generated form number:", ugForm.formNumber);
     } catch (countError) {
-      console.warn(
-        "Error counting documents, using timestamp fallback:",
-        countError
-      );
       // Fallback to timestamp-based
       const timestamp = Date.now().toString().slice(-8);
       const random = Math.floor(Math.random() * 1000)
@@ -275,15 +201,8 @@ export async function POST(req) {
     }
 
     // Validate the form before saving to catch any validation errors
-    console.log("Validating form...");
     const validationError = ugForm.validateSync();
     if (validationError) {
-      console.error("Validation error:", validationError);
-      console.error("Validation error details:", Object.values(validationError.errors).map(err => ({
-        path: err.path,
-        message: err.message,
-        value: err.value
-      })));
       return NextResponse.json(
         {
           success: false,
@@ -293,35 +212,14 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-    console.log("Form validation passed");
 
     // Save the form
-    console.log("Saving form to database...");
     await ugForm.save();
-    console.log("Form saved successfully with ID:", ugForm._id);
 
     // Populate the form before sending response
     const populatedForm = await UgForm.findById(ugForm._id)
       .populate("department", "name")
       .populate("degree", "name shortName");
-
-    // Log the saved form to verify tutor fields are saved
-    console.log("=== SAVED FORM DATA ===");
-    console.log("Form ID:", populatedForm._id.toString());
-    console.log("Form Number:", populatedForm.formNumber);
-    console.log("TUTOR DATA IN SAVED FORM:", {
-      tutorName: populatedForm.tutorName,
-      tutorEmail: populatedForm.tutorEmail,
-      tutorNameExists: populatedForm.tutorName !== undefined,
-      tutorEmailExists: populatedForm.tutorEmail !== undefined
-    });
-    
-    // Do a direct database query to verify
-    const verifyForm = await UgForm.findById(ugForm._id).lean();
-    console.log("DIRECT DB QUERY VERIFICATION:", {
-      tutorName: verifyForm.tutorName,
-      tutorEmail: verifyForm.tutorEmail
-    });
 
     return NextResponse.json(
       {
@@ -348,7 +246,6 @@ export async function POST(req) {
       const validationErrors = Object.values(error.errors).map(
         (err) => err.message
       );
-      console.error("Validation errors:", validationErrors);
       return NextResponse.json(
         {
           success: false,
@@ -361,7 +258,6 @@ export async function POST(req) {
 
     // Handle duplicate key error
     if (error.code === 11000) {
-      console.error("Duplicate key error:", error.keyValue);
       return NextResponse.json(
         {
           success: false,

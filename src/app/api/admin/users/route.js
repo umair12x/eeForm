@@ -35,11 +35,8 @@ export async function GET(req) {
       .sort({ createdAt: -1 })
       .lean(); // Use lean() for better performance
     
-    console.log("Fetched users:", users.length); // This will now log
-    
     return NextResponse.json({ users }, { status: 200 });
   } catch (err) {
-    console.error("Error fetching users:", err);
     return NextResponse.json(
       { message: err.message },
       { status: 500 }

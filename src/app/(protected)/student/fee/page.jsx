@@ -3,6 +3,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 
+export const metadata = {
+  title: "Fee Verification | Student Portal - UAF",
+  description: "Submit and track your semester fee verification documents.",
+};
+
 function FeeVerificationSystem() {
   const router = useRouter();
   const [step, setStep] = useState(1);

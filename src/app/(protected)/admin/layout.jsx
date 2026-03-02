@@ -4,6 +4,11 @@
 import { useState, useEffect } from "react"
 import AdminNavbar from "@/components/layout/AdminNavbar"
 
+export const metadata = {
+  title: "Admin Dashboard | UAF Digital Enrollment Portal",
+  description: "Admin control panel for managing departments, degrees, users, and system settings.",
+};
+
 export default function AdminLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [mounted, setMounted] = useState(false)

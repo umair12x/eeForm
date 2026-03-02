@@ -34,6 +34,11 @@ import {
   BookOpen
 } from "lucide-react"
 
+export const metadata = {
+  title: "Manager Dashboard | UAF Digital Enrollment Portal",
+  description: "Review and verify student enrollment forms. Approve or request revisions from tutors.",
+};
+
 export default function ManagerDashboard() {
   const [forms, setForms] = useState([])
   const [filteredForms, setFilteredForms] = useState([])

@@ -22,6 +22,11 @@ import {
   Sun,
 } from "lucide-react";
 
+export const metadata = {
+  title: "Student Dashboard | UAF Digital Enrollment Portal",
+  description: "Manage your enrollment, verify fees, and track form status.",
+};
+
 export default function StudentLayout({ children }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

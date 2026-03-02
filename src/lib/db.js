@@ -9,8 +9,6 @@ export default async function connectDB()  {
     await mongoose.connect(DB_url, {
       dbName: "eeformDB", // optional, creates/uses this database
     });
-
-    console.log("Database connected successfully");
   } catch (error) {
     console.error("Database connection failed:", error);
   }

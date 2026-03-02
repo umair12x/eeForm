@@ -9,6 +9,11 @@ import {
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 
+export const metadata = {
+  title: "About Us | UAF Digital Enrollment Portal",
+  description: "Learn about the University of Agriculture Faisalabad's modern digital enrollment system designed to streamline fee verification and course registration.",
+};
+
 export default function AboutPage() {
   const values = [
     {

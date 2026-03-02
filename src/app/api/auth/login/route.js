@@ -12,7 +12,7 @@ export async function POST(req) {
 
   try {
     const { identifier, password } = await req.json();
-console.log("Login attempt with identifier:", identifier);
+
     if (!identifier || !password) {
       return NextResponse.json(
         { message: "Identifier and password are required" },

@@ -30,6 +30,11 @@ import {
   CreditCard
 } from "lucide-react"
 
+export const metadata = {
+  title: "User Management | UAF Admin Panel",
+  description: "Manage system users, roles, and permissions.",
+};
+
 export default function UsersManagementPage() {
   const router = useRouter()
   const [users, setUsers] = useState([])

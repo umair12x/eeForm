@@ -17,6 +17,11 @@ import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
 import Alert from "@/components/ui/Alert";
 
+export const metadata = {
+  title: "Contact Us | UAF Digital Enrollment Portal",
+  description: "Get in touch with UAF support team. Contact information, office hours, and inquiry form.",
+};
+
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -36,7 +41,6 @@ export default function ContactPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Contact form submitted:", formData);
     setSubmitted(true);
     setFormData({ name: "", email: "", subject: "", message: "" });
     setTimeout(() => setSubmitted(false), 5000);

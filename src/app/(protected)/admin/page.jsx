@@ -17,6 +17,11 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+export const metadata = {
+  title: "Admin Dashboard | UAF Digital Enrollment Portal",
+  description: "Admin overview with system statistics, user management, and quick actions.",
+};
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     students: 0,

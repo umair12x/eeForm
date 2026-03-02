@@ -19,7 +19,7 @@ export async function GET() {
 
     return NextResponse.json(degreesData);
   } catch (error) {
-    console.error("Error fetching degrees:", error);
+    // Error fetching degrees, use defaults
     return NextResponse.json(
       { error: "Failed to fetch degrees data" },
       { status: 500 }
@@ -31,7 +31,6 @@ export async function POST(req) {
   await connectDB();
   
   try {
-    console.log("=== FEE VERIFICATION REQUEST START ===");
     const formData = await req.formData();
     
     // Extract all fields with new additions
@@ -83,8 +82,6 @@ export async function POST(req) {
       contactNumber,
       remarks,
     };
-    
-    console.log("Data to be saved:", data);
 
     // Validate required fields
     const requiredFields = [
@@ -190,10 +187,7 @@ export async function POST(req) {
         voucherImageUrl = result.secure_url;
         voucherPublicId = result.public_id;
 
-        console.log("✓ Uploaded voucher to Cloudinary:", voucherImageUrl);
-
       } catch (uploadError) {
-        console.error("✗ Cloudinary upload failed:", uploadError);
         return NextResponse.json(
           { error: "Failed to upload voucher image" },
           { status: 500 }
@@ -220,9 +214,6 @@ export async function POST(req) {
     });
 
     await verification.save();
-    
-    console.log("✓ Form saved to database with ID:", verification._id);
-    console.log("=== FEE VERIFICATION REQUEST COMPLETE ===");
 
     return NextResponse.json({
       success: true,
@@ -240,7 +231,6 @@ export async function POST(req) {
     });
     
   } catch (error) {
-    console.error("✗ Server error:", error);
     return NextResponse.json(
       { 
         error: error.message || "Internal server error",

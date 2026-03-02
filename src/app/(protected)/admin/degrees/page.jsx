@@ -18,6 +18,11 @@ import {
   X
 } from "lucide-react"
 
+export const metadata = {
+  title: "Manage Degrees | Admin Portal - UAF",
+  description: "Create, edit, and manage academic degree programs.",
+};
+
 export default function DegreesPage() {
   const [degrees, setDegrees] = useState([])
   const [departments, setDepartments] = useState([])

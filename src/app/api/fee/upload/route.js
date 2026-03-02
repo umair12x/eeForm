@@ -125,8 +125,6 @@ export async function POST(req) {
     const buffer = Buffer.from(bytes);
 
     // Upload to Cloudinary
-    console.log("Uploading to Cloudinary...");
-    
     const uploadPromise = new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -149,7 +147,6 @@ export async function POST(req) {
     });
 
     const result = await uploadPromise;
-    console.log("✓ Upload successful:", result.public_id);
 
     // Update fee record with image URL
     fee.voucherImageUrl = result.secure_url;

@@ -159,6 +159,7 @@ const UgFormSchema = new mongoose.Schema(
     },
     dateOfFirstEnrollment: {
       type: Date,
+      required: true,
     },
 
     // Student Information
@@ -212,15 +213,8 @@ const UgFormSchema = new mongoose.Schema(
     feePaymentDate: {
       type: Date,
     },
-    feeAmount: {
-      type: Number,
-      default: 0,
-    },
-    paymentMode: {
-      type: String,
-      enum: ["cash", "bank", "online", ""],
-      default: "",
-    },
+   
+    
     paymentDate: {
       type: Date,
     },
