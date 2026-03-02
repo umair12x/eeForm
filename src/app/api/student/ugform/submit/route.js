@@ -251,12 +251,7 @@ export async function POST(req) {
     });
 
     // Check what's in the ugForm object after creation
-    console.log("UgForm instance created. Checking tutor fields in instance:");
-    console.log("ugForm.tutorName:", ugForm.tutorName);
-    console.log("ugForm.tutorEmail:", ugForm.tutorEmail);
-    console.log("ugForm._doc.tutorName:", ugForm._doc?.tutorName);
-    console.log("ugForm._doc.tutorEmail:", ugForm._doc?.tutorEmail);
-
+  
     // Generate form number manually before save
     try {
       const year = new Date().getFullYear();
