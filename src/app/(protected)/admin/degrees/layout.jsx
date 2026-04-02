@@ -7,6 +7,6 @@ export const metadata = {
 
 export default function DegreesLayout() {
   return (
-    <div>layout</div>
+    <div><DegreesPage /></div>
   )
 }

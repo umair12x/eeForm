@@ -49,6 +49,9 @@ function UgForm() {
   const [extraSubjects, setExtraSubjects] = useState([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedFormNumber, setSubmittedFormNumber] = useState(null);
+  const [formStatus, setFormStatus] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState("");
   const [error, setError] = useState("");
   const [autoFillData, setAutoFillData] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -154,6 +157,41 @@ function UgForm() {
       toast.success("Form auto-filled successfully!");
     }
   };
+
+  const fetchFormStatus = useCallback(async (registeredNo) => {
+    if (!registeredNo) {
+      setFormStatus(null);
+      return;
+    }
+
+    setStatusLoading(true);
+    setStatusError("");
+
+    try {
+      const response = await axios.get(
+        `/api/student/ugform/status?registeredNo=${encodeURIComponent(registeredNo)}`
+      );
+
+      if (response.data.success) {
+        setFormStatus(response.data.data);
+      } else {
+        setFormStatus(null);
+        setStatusError(response.data.message || "Status not available");
+      }
+    } catch (err) {
+      console.error("Error fetching form status:", err);
+      setFormStatus(null);
+      setStatusError(err.response?.data?.message || "Failed to fetch form status");
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (formData.registeredNo) {
+      fetchFormStatus(formData.registeredNo);
+    }
+  }, [formData.registeredNo, fetchFormStatus]);
 
   // API Functions
   const fetchDepartments = useCallback(async () => {
@@ -570,6 +608,11 @@ function UgForm() {
         setIsSubmitted(true);
         setSubmittedFormNumber(response.data.formNumber);
         toast.success(`Form submitted! Number: ${response.data.formNumber}`);
+
+        // Refresh status tracker from backend after submit
+        if (formData.registeredNo) {
+          fetchFormStatus(formData.registeredNo);
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -636,9 +679,31 @@ function UgForm() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
               Form Submitted!
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
               Form Number: {submittedFormNumber}
             </p>
+
+            <div className="mb-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Current Approval Status</h3>
+                <button
+                  type="button"
+                  onClick={() => fetchFormStatus(formData.registeredNo)}
+                  disabled={!formData.registeredNo || statusLoading}
+                  className="text-xs px-2 py-1 border border-blue-200 dark:border-blue-800 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-60"
+                >
+                  {statusLoading ? "Refreshing..." : "Refresh"}
+                </button>
+              </div>
+              {statusLoading ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400">Loading current status...</p>
+              ) : formStatus ? (
+                <p className="text-xs text-gray-700 dark:text-gray-300">{formStatus.stageLabel || "Loading..."}</p>
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400">Status data is not available yet.</p>
+              )}
+            </div>
+
             <button
               onClick={handleReset}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
@@ -694,6 +759,57 @@ function UgForm() {
               <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
             </div>
           )}
+
+          {/* Form Status Tracker */}
+          <div className="mb-5 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                UG-1 Form Status Tracker
+              </h3>
+              <button
+                type="button"
+                onClick={() => fetchFormStatus(formData.registeredNo)}
+                disabled={!formData.registeredNo || statusLoading}
+                className="text-xs px-2 py-1 border border-blue-200 dark:border-blue-800 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-60"
+              >
+                {statusLoading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+
+            {statusLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading status...</p>
+            ) : formStatus ? (
+              <>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                  Form Number: {formStatus.formNumber || "N/A"} • Current Status: 
+                  <span className="font-semibold text-blue-700 dark:text-blue-300">
+                    {formStatus.stageLabel || (formStatus.status || "N/A").replace(/_/g, " ")}
+                  </span>
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+                  {formStatus.statusTimeline?.map((item) => (
+                    <div
+                      key={item.step}
+                      className={`text-center text-xs px-2 py-1 rounded-lg border ${
+                        item.done
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                      }`}
+                    >
+                      {item.title}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : statusError ? (
+              <p className="text-sm text-red-600 dark:text-red-400">{statusError}</p>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Enter registration number and submit your form to track approval status.
+              </p>
+            )}
+          </div>
 
           <StepIndicator />
 
