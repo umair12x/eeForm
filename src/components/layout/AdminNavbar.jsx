@@ -131,15 +131,7 @@ export default function AdminNavbar() {
             </div>
           </nav>
 
-          {/* Quick Actions */}
-          <div className="hidden md:flex items-center gap-1 pl-4 border-l border-slate-200 dark:border-slate-800 shrink-0">
-            <button className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
-              <Settings className="w-4 h-4" />
-            </button>
-            <button className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-          </div>
+         
         </div>
       </div>
 
