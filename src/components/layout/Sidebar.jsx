@@ -5,6 +5,32 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Sidebar({ navigation, role = 'admin' }) {
+  'use client';
+
+  import { useState } from 'react';
+  import Link from 'next/link';
+  import { usePathname } from 'next/navigation';
+
+  // Static role configuration
+  const ROLE_COLORS = {
+    admin: 'bg-blue-600',
+    student: 'bg-green-600',
+    'fee-office': 'bg-yellow-600',
+    tutor: 'bg-purple-600',
+    manager: 'bg-orange-600',
+    'dg-office': 'bg-red-600',
+  };
+
+  const ROLE_TITLES = {
+    admin: 'Admin Panel',
+    student: 'Student Portal',
+    'fee-office': 'Fee Office',
+    tutor: 'Tutor Portal',
+    manager: 'Manager Portal',
+    'dg-office': 'DG Office',
+  };
+
+  export default function Sidebar({ navigation, role = 'admin' }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
@@ -24,15 +50,17 @@ export default function Sidebar({ navigation, role = 'admin' }) {
     tutor: 'Tutor Portal',
     manager: 'Manager Portal',
     'dg-office': 'DG Office',
+    const [collapsed, setCollapsed] = useState(false);
+    const pathname = usePathname();
   };
 
   return (
     <div className={`${collapsed ? 'w-20' : 'w-64'} transition-all duration-300 flex-shrink-0`}>
       <div className="bg-white rounded-lg shadow-sm overflow-hidden sticky top-4">
         {/* Header */}
-        <div className={`px-4 py-3 ${roleColors[role] || 'bg-gray-600'} flex items-center justify-between`}>
+        <div className={`px-4 py-3 ${ROLE_COLORS[role] || 'bg-gray-600'} flex items-center justify-between`}>
           {!collapsed && (
-            <h2 className="text-sm font-medium text-white">{roleTitles[role]}</h2>
+            <h2 className="text-sm font-medium text-white">{ROLE_TITLES[role]}</h2>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -62,7 +90,7 @@ export default function Sidebar({ navigation, role = 'admin' }) {
                   flex items-center ${collapsed ? 'justify-center' : 'justify-start'} 
                   px-4 py-2 rounded-md text-sm mb-1
                   ${isActive
-                    ? `bg-${roleColors[role].replace('bg-', '')}-50 text-${roleColors[role].replace('bg-', '')}-700`
+                      ? `bg-${ROLE_COLORS[role].replace('bg-', '')}-50 text-${ROLE_COLORS[role].replace('bg-', '')}-700`
                     : 'text-gray-600 hover:bg-gray-50'
                   }
                 `}

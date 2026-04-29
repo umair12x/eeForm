@@ -1,7 +1,7 @@
 // Main NavBar - Enhanced
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -28,6 +28,80 @@ import {
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
+
+// Static configuration - no component re-creates
+const ROLE_CONFIG = {
+  admin: {
+    icon: Shield,
+    color: "text-violet-600 dark:text-violet-400",
+    bg: "bg-violet-50 dark:bg-violet-900/20",
+    border: "border-violet-200 dark:border-violet-800",
+    label: "Administrator",
+    gradient: "from-violet-600 to-purple-600",
+    accent: "violet",
+  },
+  "dg-office": {
+    icon: Building2,
+    color: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-900/20",
+    border: "border-blue-200 dark:border-blue-800",
+    label: "DG Office",
+    gradient: "from-blue-600 to-cyan-600",
+    accent: "blue",
+  },
+  "fee-office": {
+    icon: Banknote,
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    border: "border-emerald-200 dark:border-emerald-800",
+    label: "Fee Office",
+    gradient: "from-emerald-600 to-teal-600",
+    accent: "emerald",
+  },
+  manager: {
+    icon: UserCog,
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-900/20",
+    border: "border-amber-200 dark:border-amber-800",
+    label: "Manager",
+    gradient: "from-amber-600 to-orange-600",
+    accent: "amber",
+  },
+  tutor: {
+    icon: Users,
+    color: "text-rose-600 dark:text-rose-400",
+    bg: "bg-rose-50 dark:bg-rose-900/20",
+    border: "border-rose-200 dark:border-rose-800",
+    label: "Tutor",
+    gradient: "from-rose-600 to-pink-600",
+    accent: "rose",
+  },
+  student: {
+    icon: GraduationCap,
+    color: "text-slate-600 dark:text-slate-400",
+    bg: "bg-slate-50 dark:bg-slate-800",
+    border: "border-slate-200 dark:border-slate-700",
+    label: "Student",
+    gradient: "from-slate-600 to-slate-700",
+    accent: "slate",
+  },
+};
+
+const NAV_LINKS = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/guide", label: "Guide", icon: BookOpen },
+  { href: "/about", label: "About", icon: FileText },
+  { href: "/contact", label: "Contact", icon: Mail },
+];
+
+const DASHBOARD_LINKS = {
+  admin: "/admin",
+  "dg-office": "/dg-office",
+  "fee-office": "/fee-office",
+  manager: "/manager",
+  tutor: "/tutor",
+  student: "/student",
+};
 
 export default function NavBar() {
   const router = useRouter();
@@ -72,87 +146,15 @@ export default function NavBar() {
     }
   };
 
-  const roleConfig = {
-    admin: {
-      icon: Shield,
-      color: "text-violet-600 dark:text-violet-400",
-      bg: "bg-violet-50 dark:bg-violet-900/20",
-      border: "border-violet-200 dark:border-violet-800",
-      label: "Administrator",
-      gradient: "from-violet-600 to-purple-600",
-      accent: "violet",
-    },
-    "dg-office": {
-      icon: Building2,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50 dark:bg-blue-900/20",
-      border: "border-blue-200 dark:border-blue-800",
-      label: "DG Office",
-      gradient: "from-blue-600 to-cyan-600",
-      accent: "blue",
-    },
-    "fee-office": {
-      icon: Banknote,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-50 dark:bg-emerald-900/20",
-      border: "border-emerald-200 dark:border-emerald-800",
-      label: "Fee Office",
-      gradient: "from-emerald-600 to-teal-600",
-      accent: "emerald",
-    },
-    manager: {
-      icon: UserCog,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-50 dark:bg-amber-900/20",
-      border: "border-amber-200 dark:border-amber-800",
-      label: "Manager",
-      gradient: "from-amber-600 to-orange-600",
-      accent: "amber",
-    },
-    tutor: {
-      icon: Users,
-      color: "text-rose-600 dark:text-rose-400",
-      bg: "bg-rose-50 dark:bg-rose-900/20",
-      border: "border-rose-200 dark:border-rose-800",
-      label: "Tutor",
-      gradient: "from-rose-600 to-pink-600",
-      accent: "rose",
-    },
-    student: {
-      icon: GraduationCap,
-      color: "text-slate-600 dark:text-slate-400",
-      bg: "bg-slate-50 dark:bg-slate-800",
-      border: "border-slate-200 dark:border-slate-700",
-      label: "Student",
-      gradient: "from-slate-600 to-slate-700",
-      accent: "slate",
-    },
-  };
+  const getUserConfig = useCallback(() => {
+    if (!user) return ROLE_CONFIG.student;
+    return ROLE_CONFIG[user.role] || ROLE_CONFIG.student;
+  }, [user]);
 
-  const getUserConfig = () => {
-    if (!user) return roleConfig.student;
-    return roleConfig[user.role] || roleConfig.student;
-  };
-
-  const getUserDashboardLink = () => {
+  const getUserDashboardLink = useCallback(() => {
     if (!user) return "/login";
-    const links = {
-      admin: "/admin",
-      "dg-office": "/dg-office",
-      "fee-office": "/fee-office",
-      manager: "/manager",
-      tutor: "/tutor",
-      student: "/student",
-    };
-    return links[user.role] || "/";
-  };
-
-  const navLinks = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/guide", label: "Guide", icon: BookOpen },
-    { href: "/about", label: "About", icon: FileText },
-    { href: "/contact", label: "Contact", icon: Mail },
-  ];
+    return DASHBOARD_LINKS[user.role] || "/";
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -193,7 +195,7 @@ export default function NavBar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-0.5">
-            {navLinks.map((link) => {
+            {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
               const LinkIcon = link.icon;
               return (
@@ -391,7 +393,7 @@ export default function NavBar() {
 
             {/* Mobile Nav Links */}
             <div className="space-y-1">
-              {navLinks.map((link) => {
+              {NAV_LINKS.map((link) => {
                 const isActive = pathname === link.href;
                 const LinkIcon = link.icon;
                 return (
