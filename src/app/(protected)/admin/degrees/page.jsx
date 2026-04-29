@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ConfirmationModal from "@/components/ConfirmationModal";
+import Skeleton from "@/components/ui/Skeleton";
 import {
   GraduationCap,
   Plus,
@@ -26,6 +28,9 @@ export default function DegreesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDept, setFilterDept] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -95,16 +100,25 @@ export default function DegreesPage() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm("Are you sure you want to delete this degree program?"))
-      return;
+  function handleDelete(id) {
+    setPendingDelete(id);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
 
     try {
-      const res = await fetch(`/api/admin/degree/${id}`, { method: "DELETE" });
+      setIsDeleting(true);
+      const res = await fetch(`/api/admin/degree/${pendingDelete}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
-      setDegrees(degrees.filter((d) => d.id !== id));
+      setDegrees(degrees.filter((d) => d.id !== pendingDelete));
+      setShowDeleteConfirm(false);
+      setPendingDelete(null);
     } catch (err) {
       alert(err.message);
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -156,8 +170,18 @@ export default function DegreesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-64 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -506,6 +530,22 @@ export default function DegreesPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Delete Degree Program"
+        description="Are you sure you want to delete this degree program? This action cannot be undone."
+        isDanger={true}
+        isLoading={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setPendingDelete(null);
+        }}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

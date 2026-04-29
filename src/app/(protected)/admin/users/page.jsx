@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import ConfirmationModal from "@/components/ConfirmationModal"
+import Skeleton, { SkeletonTable } from "@/components/ui/Skeleton"
 import {
   Users,
   Search,
@@ -57,6 +59,11 @@ export default function UsersManagementPage() {
   const [editingUser, setEditingUser] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+
+  // Confirmation Modal
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Departments for filter
   const [departments, setDepartments] = useState([])
@@ -307,18 +314,29 @@ export default function UsersManagementPage() {
       }
     }
 
-    if (!confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) return
+    setPendingDelete({ userId, name, role })
+    setShowDeleteConfirm(true)
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return
+    const { userId } = pendingDelete
 
     try {
+      setIsDeleting(true)
       const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Delete failed")
 
       setUsers(users.filter((u) => u.id !== userId))
       setSuccess("User deleted successfully")
       setTimeout(() => setSuccess(""), 3000)
+      setShowDeleteConfirm(false)
+      setPendingDelete(null)
     } catch (err) {
       setError(err.message)
       setTimeout(() => setError(""), 5000)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -621,7 +639,9 @@ export default function UsersManagementPage() {
 
         {/* Content */}
         <div className="p-4">
-          {filteredUsers.length === 0 ? (
+          {loading ? (
+            <SkeletonTable rows={5} columns={6} />
+          ) : filteredUsers.length === 0 ? (
             <div className="text-center py-16">
               <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No users found</h3>
@@ -986,6 +1006,22 @@ export default function UsersManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Delete User"
+        description={`Are you sure you want to delete ${pendingDelete?.name}? This action cannot be undone.`}
+        isDanger={true}
+        isLoading={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false)
+          setPendingDelete(null)
+        }}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   )
 }

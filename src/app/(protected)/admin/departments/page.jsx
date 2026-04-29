@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ConfirmationModal from "@/components/ConfirmationModal";
+import Skeleton from "@/components/ui/Skeleton";
 import {
   Building2,
   Plus,
@@ -19,6 +21,9 @@ export default function DepartmentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -91,16 +96,26 @@ export default function DepartmentsPage() {
       return;
     }
 
-    if (!confirm("Are you sure you want to delete this department?")) return;
+    setPendingDelete(id);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
 
     try {
-      const res = await fetch(`/api/admin/department/${id}`, {
+      setIsDeleting(true);
+      const res = await fetch(`/api/admin/department/${pendingDelete}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete");
-      setDepartments(departments.filter((d) => d.id !== id));
+      setDepartments(departments.filter((d) => d.id !== pendingDelete));
+      setShowDeleteConfirm(false);
+      setPendingDelete(null);
     } catch (err) {
       alert(err.message);
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -128,8 +143,18 @@ export default function DepartmentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -309,6 +334,22 @@ export default function DepartmentsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Delete Department"
+        description="Are you sure you want to delete this department? This action cannot be undone."
+        isDanger={true}
+        isLoading={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setPendingDelete(null);
+        }}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

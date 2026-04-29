@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Users,
   GraduationCap,
@@ -15,6 +15,17 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+
+// Static color configuration
+const COLOR_CLASSES = {
+  emerald:
+    "from-emerald-500 to-teal-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+  blue: "from-blue-500 to-cyan-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+  violet:
+    "from-violet-500 to-purple-600 bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
+  amber:
+    "from-amber-500 to-orange-600 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+};
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -60,50 +71,43 @@ export default function AdminDashboard() {
     }
   }
 
-  const statCards = [
-    {
-      label: "Total Students",
-      value: stats.students,
-      icon: Users,
-      color: "emerald",
-      trendUp: true,
-      href: "/admin/users?role=student",
-    },
-    {
-      label: "Degree Programs",
-      value: stats.degrees,
-      icon: GraduationCap,
-      color: "blue",
-      trendUp: true,
-      href: "/admin/degrees",
-    },
-    {
-      label: "Active Subjects",
-      value: stats.subjects,
-      icon: BookOpen,
-      color: "violet",
-      trendUp: true,
-      href: "/admin/subjects",
-    },
-    {
-      label: "Departments",
-      value: stats.departments,
-      icon: Building2,
-      color: "amber",
-      trendUp: true,
-      href: "/admin/departments",
-    },
-  ];
-
-  const colorClasses = {
-    emerald:
-      "from-emerald-500 to-teal-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
-    blue: "from-blue-500 to-cyan-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-    violet:
-      "from-violet-500 to-purple-600 bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
-    amber:
-      "from-amber-500 to-orange-600 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
-  };
+  const statCards = useMemo(
+    () => [
+      {
+        label: "Total Students",
+        value: stats.students,
+        icon: Users,
+        color: "emerald",
+        trendUp: true,
+        href: "/admin/users?role=student",
+      },
+      {
+        label: "Degree Programs",
+        value: stats.degrees,
+        icon: GraduationCap,
+        color: "blue",
+        trendUp: true,
+        href: "/admin/degrees",
+      },
+      {
+        label: "Active Subjects",
+        value: stats.subjects,
+        icon: BookOpen,
+        color: "violet",
+        trendUp: true,
+        href: "/admin/subjects",
+      },
+      {
+        label: "Departments",
+        value: stats.departments,
+        icon: Building2,
+        color: "amber",
+        trendUp: true,
+        href: "/admin/departments",
+      },
+    ],
+    [stats.students, stats.degrees, stats.subjects, stats.departments]
+  );
 
   if (loading) {
     return (
@@ -153,7 +157,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card) => {
           const Icon = card.icon;
-          const colors = colorClasses[card.color];
+          const colors = COLOR_CLASSES[card.color];
 
           return (
             <Link
