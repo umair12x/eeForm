@@ -10,10 +10,9 @@ import {
   BookOpen, 
   Users, 
   UserPlus,
-  Settings,
+  MessageSquare,
   Shield,
-  ChevronRight,
-  MoreHorizontal
+  ChevronRight
 } from "lucide-react"
 
 export default function AdminNavbar() {
@@ -49,6 +48,12 @@ export default function AdminNavbar() {
       href: "/admin/users",
       icon: Users,
       description: "User Management"
+    },
+    {
+      name: "Messages",
+      href: "/admin/messages",
+      icon: MessageSquare,
+      description: "Contact Submissions"
     },
     { 
       name: "Create User", 

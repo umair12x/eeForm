@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import {
-  MapPin,
   Mail,
   Phone,
   Clock,
@@ -27,6 +26,8 @@ export default function ContactPage() {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
 
   const handleChange = (e) => {
@@ -36,11 +37,34 @@ export default function ContactPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    setTimeout(() => setSubmitted(false), 5000);
+
+    try {
+      setSubmitting(true);
+      setSubmitError("");
+
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send message");
+      }
+
+      setSubmitted(true);
+      setFormData({ name: "", email: "", subject: "", message: "" });
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (error) {
+      setSubmitError(error.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const contactInfo = [
@@ -180,6 +204,16 @@ export default function ContactPage() {
                 </Alert>
               )}
 
+              {submitError && (
+                <Alert
+                  type="error"
+                  className="mb-6"
+                  onClose={() => setSubmitError("")}
+                >
+                  {submitError}
+                </Alert>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="relative">
@@ -261,10 +295,11 @@ export default function ContactPage() {
                   type="submit"
                   variant="primary"
                   size="lg"
+                  disabled={submitting}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-xl font-semibold shadow-lg shadow-blue-200 dark:shadow-blue-900/30 hover:shadow-xl transition-all duration-300"
                 >
                   <Send className="w-5 h-5 mr-2" />
-                  Send Message
+                  {submitting ? "Sending..." : "Send Message"}
                 </Button>
               </form>
             </Card>

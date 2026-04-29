@@ -20,6 +20,7 @@ const publicRoutes = [
   "/",
   "/about",
   "/contact",
+  "/api/contact",
   "/guide",
   "/unauthorized",
 ];
@@ -154,7 +155,8 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      * - api/auth (authentication endpoints)
+     * - api/contact (public contact submission endpoint)
      */
-    "/((?!_next/static|_next/image|favicon.ico|public|api/auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|api/auth|api/contact).*)",
   ],
 };

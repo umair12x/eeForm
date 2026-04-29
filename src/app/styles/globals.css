@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@plugin "daisyui";
-@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
@@ -10,15 +8,15 @@
   --border-soft: #f1e6b8;
   --accent-primary: #d3a410;
   --accent-secondary: #0e5acd;
-}
 
-/* Theme tokens */
-@theme inline {
+  /* Legacy theme tokens (from removed DaisyUI) */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+
+/* Theme tokens were inlined above when removing DaisyUI */
 
 /* System dark mode */
 @media (prefers-color-scheme: dark) {

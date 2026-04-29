@@ -33,7 +33,7 @@ E-Enrollment is a purpose-built web application designed to modernize the underg
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | **Frontend** | React 19.1.0, Next.js App Router | UI framework & server-side rendering |
-| **Styling** | Tailwind CSS 4.1.14, DaisyUI 5.3.7 | Responsive design & component library |
+| **Styling** | Tailwind CSS 4.1.14 | Responsive design & utility-first CSS |
 | **Backend** | Next.js 15.5.6 (API Routes) | Server-side logic & API endpoints |
 | **Database** | MongoDB 9.1.6 (Mongoose ODM) | Document storage & data modeling |
 | **Authentication** | JWT + Session Cookies | Secure user authentication |
