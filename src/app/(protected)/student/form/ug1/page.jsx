@@ -480,6 +480,10 @@ function UgForm() {
         toast.error("Please enter admission term");
         return false;
       }
+      if (!formData.dateOfFirstEnrollment) {
+        toast.error("Please select the first enrollment date");
+        return false;
+      }
     }
     if (step === 2) {
       if (!formData.registeredNo) {
@@ -939,6 +943,20 @@ function UgForm() {
                       placeholder="e.g., Fall 2025"
                     />
                   </div>
+
+                  {/* Date of First Enrollment */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Date of First Enrollment <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="dateOfFirstEnrollment"
+                      value={formData.dateOfFirstEnrollment}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
@@ -1293,6 +1311,10 @@ function UgForm() {
                     <div className="font-medium">{formData.session || "—"}</div>
                     <div>Semester:</div>
                     <div className="font-medium">{formData.semester || "—"}</div>
+                    <div>First Enrollment:</div>
+                    <div className="font-medium">
+                      {formData.dateOfFirstEnrollment || "—"}
+                    </div>
                     <div>Section:</div>
                     <div className="font-medium">{formData.section || "—"}</div>
                   </div>

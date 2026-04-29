@@ -1,7 +1,7 @@
 // app/student/layout.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -18,48 +18,6 @@ import {
 export default function StudentLayout({ children }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(3);
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check system preference for dark mode
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    setIsDarkMode(prefersDark);
-
-    // Apply dark mode class
-    if (prefersDark) {
-      document.documentElement.classList.add("dark");
-    }
-
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    // Toggle dark mode class
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
-  async function fetchUser() {
-    try {
-      const res = await fetch("/api/auth/me");
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-      }
-    } catch (err) {
-      console.error("Error fetching user:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   const navigation = [
     {
@@ -109,10 +67,6 @@ export default function StudentLayout({ children }) {
       return pathname === "/student" || pathname === "/student/";
     }
     return pathname.startsWith(href);
-  };
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
   };
 
   return (

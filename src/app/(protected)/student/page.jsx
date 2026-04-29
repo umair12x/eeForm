@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -68,6 +68,16 @@ export default function page() {
   const feeLast = feeInfo?.found
     ? new Date(feeInfo.data.approvedAt).toLocaleString()
     : "Not available";
+  // Memoize formatted dates to prevent unnecessary recalculation
+  const formattedLastUpdate = useMemo(
+    () => lastUpdated ? lastUpdated.toLocaleTimeString() : "-",
+    [lastUpdated]
+  );
+
+  const formattedFeeDate = useMemo(
+    () => feeInfo?.found ? new Date(feeInfo.data.approvedAt).toLocaleString() : "Not available",
+    [feeInfo?.found, feeInfo?.data?.approvedAt]
+  );
 
   if (loading) {
     return (
@@ -97,7 +107,7 @@ export default function page() {
             {user ? `Welcome back, ${user.name}` : "Welcome, student"}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-            Updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : "-"}
+            Updated: {formattedLastUpdate}
           </p>
         </div>
 
@@ -150,7 +160,7 @@ export default function page() {
               <strong>Approved Amount:</strong> {feeAmount !== "-" ? `₹ ${feeAmount}` : "N/A"}
             </p>
             <p>
-              <strong>Last Activity:</strong> {feeLast}
+              <strong>Last Activity:</strong> {formattedFeeDate}
             </p>
           </div>
           <div className="mt-3">
