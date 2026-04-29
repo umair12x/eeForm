@@ -25,7 +25,12 @@ import {
 } from "lucide-react"
 import ThemeToggle from "@/components/layout/ThemeToggle"
 
-
+// Static role configuration - no dependencies
+const ROLE_CONFIG = {
+  admin: { label: "Administrator", color: "violet", icon: Shield },
+  "dg-office": { label: "DG Office", color: "blue", icon: Building2 },
+  "fee-office": { label: "Fee Office", color: "emerald", icon: Phone },
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -103,11 +108,7 @@ export default function LoginPage() {
   }
 
   // Role configurations with icons and colors
-  const roleConfig = {
-    admin: { label: "Administrator", color: "violet", icon: Shield },
-    "dg-office": { label: "DG Office", color: "blue", icon: Building2 },
-    "fee-office": { label: "Fee Office", color: "emerald", icon: Phone },
-  }
+
 
   if (!mounted) {
     return (
@@ -428,7 +429,7 @@ export default function LoginPage() {
                   {availableRoles.length > 0 && (
                     <div className="mt-2 flex flex-wrap justify-center gap-2">
                       {availableRoles.map((role) => {
-                        const config = roleConfig[role]
+                        const config = ROLE_CONFIG[role]
                         return (
                           <span
                             key={role}
