@@ -4,6 +4,7 @@ import UgForm from "@/models/UgForm";
 import Department from "@/models/Department";
 import Degree from "@/models/Degree";
 import DegreeScheme from "@/models/SubjectScheme";
+import Fee from "@/models/Fee";
 
 export async function POST(req) {
   await connectDB();
@@ -18,6 +19,7 @@ export async function POST(req) {
       { field: "section", message: "Section is required" },
       { field: "session", message: "Session is required" },
       { field: "admissionTo", message: "Admission term is required" },
+      { field: "dateOfFirstEnrollment", message: "Date of first enrollment is required" },
       { field: "registeredNo", message: "Registration number is required" },
       { field: "studentName", message: "Student name is required" },
       { field: "fatherName", message: "Father's name is required" },
@@ -36,6 +38,50 @@ export async function POST(req) {
           { status: 400 }
         );
       }
+    }
+
+    const requestedSemester = parseInt(body.semester, 10);
+    if (Number.isNaN(requestedSemester)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Semester must be a valid number",
+        },
+        { status: 400 }
+      );
+    }
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const latestApprovedFee = await Fee.findOne({
+      registrationNumber: body.registeredNo.trim().toUpperCase(),
+      status: "approved",
+      submittedAt: { $gte: sixMonthsAgo },
+    })
+      .sort({ processedAt: -1, submittedAt: -1 })
+      .lean();
+
+    if (!latestApprovedFee) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "UG form submission is allowed only after a recently approved fee is available.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (latestApprovedFee.semesterPaid !== requestedSemester) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `UG form can only be submitted for Semester ${latestApprovedFee.semesterPaid}, based on the latest approved fee.`,
+          allowedSemester: latestApprovedFee.semesterPaid,
+        },
+        { status: 403 }
+      );
     }
 
     // CHECK FOR DUPLICATE FORM

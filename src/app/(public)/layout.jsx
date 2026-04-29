@@ -1,6 +1,8 @@
 import NavBar from '@/components/layout/NavBar';
 import Footer from '@/components/layout/Footer';
 
+export const revalidate = 3600;
+
 export const metadata = {
   title : {
     default: "UAF Digital Enrollment Portal",
@@ -11,7 +13,7 @@ export const metadata = {
 
 export default function OpenLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div id="top" className="min-h-screen flex flex-col">
       <NavBar />
       {children}
       <Footer />

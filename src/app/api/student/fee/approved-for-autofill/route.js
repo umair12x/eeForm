@@ -67,6 +67,8 @@ export async function GET(req) {
         degreeMode: approvedFee.degreeMode,
         contactNumber: approvedFee.contactNumber,
         studentType: approvedFee.studentType,
+        semesterPaid: approvedFee.semesterPaid,
+        approvedAt: approvedFee.processedAt,
         feePaidUpto: approvedFee.feeAmount,
         feePaymentDate: approvedFee.paymentDate,
       },

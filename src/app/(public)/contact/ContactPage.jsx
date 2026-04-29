@@ -16,7 +16,48 @@ import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
 import Alert from "@/components/ui/Alert";
 
+// Static configuration - contact information
+const CONTACT_INFO = [
+  {
+    icon: Building2,
+    title: "Office Location",
+    content: "Main Campus, University Office",
+    subContent: "City, State 12345",
+    color: "blue",
+  },
+  {
+    icon: Mail,
+    title: "Email",
+    content: "support@enrollment.edu",
+    subContent: "admissions@enrollment.edu",
+    color: "emerald",
+  },
+  {
+    icon: Phone,
+    title: "Phone",
+    content: "+1 (555) 123-4567",
+    subContent: "Support: +1 (555) 987-6543",
+    color: "violet",
+  },
+  {
+    icon: Clock,
+    title: "Office Hours",
+    content: "Mon - Fri: 8:00 AM - 5:00 PM",
+    subContent: "Sat: 9:00 AM - 1:00 PM",
+    color: "amber",
+  },
+];
 
+// Static color classes
+const COLOR_CLASSES = {
+  blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
+  emerald:
+    "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400",
+  violet:
+    "bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400",
+  amber:
+    "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
+};
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -67,47 +108,6 @@ export default function ContactPage() {
     }
   };
 
-  const contactInfo = [
-    {
-      icon: Building2,
-      title: "Office Location",
-      content: "Main Campus, University Office",
-      subContent: "City, State 12345",
-      color: "blue",
-    },
-    {
-      icon: Mail,
-      title: "Email",
-      content: "support@enrollment.edu",
-      subContent: "admissions@enrollment.edu",
-      color: "emerald",
-    },
-    {
-      icon: Phone,
-      title: "Phone",
-      content: "+1 (555) 123-4567",
-      subContent: "Support: +1 (555) 987-6543",
-      color: "violet",
-    },
-    {
-      icon: Clock,
-      title: "Office Hours",
-      content: "Mon - Fri: 8:00 AM - 5:00 PM",
-      subContent: "Sat: 9:00 AM - 1:00 PM",
-      color: "amber",
-    },
-  ];
-
-  const colorClasses = {
-    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
-    emerald:
-      "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400",
-    violet:
-      "bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400",
-    amber:
-      "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -130,7 +130,7 @@ export default function ContactPage() {
           {/* Contact Information - Left Side */}
           <div className="lg:col-span-2 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-              {contactInfo.map((info, index) => (
+              {CONTACT_INFO.map((info, index) => (
                 <Card
                   key={index}
                   className="p-6 hover:shadow-lg transition-all duration-300 group border-l-4 border-l-transparent hover:border-l-current dark:hover:border-l-current"
@@ -138,7 +138,7 @@ export default function ContactPage() {
                 >
                   <div className="flex items-start gap-4">
                     <div
-                      className={`w-12 h-12 rounded-xl ${colorClasses[info.color]} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}
+                      className={`w-12 h-12 rounded-xl ${COLOR_CLASSES[info.color]} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}
                     >
                       <info.icon className="w-6 h-6" />
                     </div>

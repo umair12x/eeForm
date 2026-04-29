@@ -1,6 +1,9 @@
 import Footer from "@/components/layout/Footer";
 import NavBar from "@/components/layout/NavBar";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = {
   title: "Dashboard | UAF Digital Enrollment Portal",
 };

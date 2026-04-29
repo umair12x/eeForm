@@ -17,16 +17,18 @@ export async function GET(req) {
       );
     }
 
-    const query = formNumber
-      ? { formNumber: formNumber.trim().toUpperCase() }
-      : { registeredNo: registeredNo.trim() };
+    const normalizedRegisteredNo = registeredNo?.trim().toUpperCase();
+    const normalizedFormNumber = formNumber?.trim().toUpperCase();
+    const query = normalizedFormNumber
+      ? { formNumber: normalizedFormNumber }
+      : { registeredNo: { $regex: `^${normalizedRegisteredNo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } };
 
     const form = await UgForm.findOne(query).sort({ submittedAt: -1 });
 
     if (!form) {
       return NextResponse.json(
-        { success: false, message: "Form not found" },
-        { status: 404 }
+        { success: true, data: null, message: "Form not found" },
+        { status: 200 }
       );
     }
 
